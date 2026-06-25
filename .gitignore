@@ -1,4 +1,4 @@
-HELP.md
+navalstrikeAPI/HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -14,7 +14,7 @@ target/
 .sts4-cache
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -67,6 +67,7 @@ Thumbs.db
 application-prod.properties
 application-dev.properties
 .env
+application.properties
 
 compiler.xml
 encodings.xml
