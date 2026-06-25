@@ -1,0 +1,77 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+##############################
+# JAVA / SPRING BOOT
+##############################
+
+# Compilação
+*.class
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.swp
+*.swo
+
+# IDEs
+.idea/
+
+# Eclipse
+.settings/
+
+# VS Code
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+
+##############################
+# APPLICATION CONFIGS
+##############################
+
+# Arquivos sensíveis
+application-prod.properties
+application-dev.properties
+.env
+
+compiler.xml
+encodings.xml
+jarRepositories.xml
+misc.xml
+modules.xml
+vcs.xml
+navalstrikeAPI.iml
