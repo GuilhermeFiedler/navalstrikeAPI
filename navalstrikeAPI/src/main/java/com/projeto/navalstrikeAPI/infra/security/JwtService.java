@@ -1,5 +1,8 @@
 package com.projeto.navalstrikeAPI.infra.security;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.projeto.navalstrikeAPI.domain.user.entity.RevokedToken;
 import com.projeto.navalstrikeAPI.domain.user.repository.RevokedTokenRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,7 +20,7 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.exxpiration-hours:2}")
+    @Value("${jwt.expiration-hours:2}")
     private int expirationHours;
 
     private final RevokedTokenRepository revokedTokenRepository;
@@ -42,6 +45,9 @@ public class JwtService {
                 .withIssuer("navalstrike-api")
                 .build()
                 .verify(token);
+        if (revokedTokenRepository.existsByTokenId(decoded.getId())) {
+            throw new RuntimeException("Token revogado");}
+         return decoded;
     }
 
     public void revokeToken(String token) {
