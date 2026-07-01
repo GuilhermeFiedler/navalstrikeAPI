@@ -12,9 +12,14 @@ import java.util.Set;
 public class ShipService {
 
     public Ship createShip(ShipType type, Set<Coordinate> coordinates){
-
+        return new Ship(type, coordinates);
     }
 
-    public boolean canPlaceShip(Board board, Ship ship){}
+    public boolean canPlaceShip(Board board, Ship ship){
+        return board.getShips().stream()
+                .noneMatch(existing ->
+                        existing.getCoordinates().stream()
+                                .anyMatch((ship.getCoordinates()::contains)));
+    }
 
 }

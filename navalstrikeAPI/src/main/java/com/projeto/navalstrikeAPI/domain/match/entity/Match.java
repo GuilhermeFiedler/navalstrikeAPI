@@ -2,6 +2,7 @@ package com.projeto.navalstrikeAPI.domain.match.entity;
 
 import com.projeto.navalstrikeAPI.common.enums.GameStatus;
 import com.projeto.navalstrikeAPI.domain.board.entity.Board;
+import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.Setter;
 import java.util.UUID;
 
 @Entity
-@Table(name ="Match")
+@Table(name ="matches")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,13 +20,26 @@ public class Match {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    GameStatus status;
+    @Enumerated(EnumType.STRING)
+    private GameStatus status;
 
     @ManyToOne
     @JoinColumn(name = "board_player_1_id")
-    Board boardPlayer1;
+    private Board boardPlayer1;
     @ManyToOne
     @JoinColumn(name = "board_player_2_id")
-    Board boardPlayer2;
+    private Board boardPlayer2;
+
+    @OneToOne
+    @JoinColumn(name = "player_1")
+    private User player1;
+
+    @OneToOne
+    @JoinColumn(name = "player_2")
+    private User player2;
+
+    @ManyToOne
+    @JoinColumn(name = "current_turn_id")
+    private User currentTurn;
 
 }

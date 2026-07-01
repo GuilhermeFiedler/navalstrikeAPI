@@ -1,10 +1,11 @@
 package com.projeto.navalstrikeAPI.domain.board.controller;
 
 import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
+import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/boards")
@@ -15,5 +16,7 @@ public class BoardController {
     private final BoardService service;
 
     @PostMapping("/{id}/ships")
-    public void placeShip(){}
+    public void placeShip(@PathVariable UUID id, @RequestBody PlaceShipRequest request){
+        service.placeShip(id, request);
+    }
 }

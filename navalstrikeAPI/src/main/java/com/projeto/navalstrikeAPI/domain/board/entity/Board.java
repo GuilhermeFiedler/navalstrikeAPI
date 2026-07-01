@@ -6,11 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @Entity
-@Table(name ="Board")
+@Table(name ="board")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,5 +20,7 @@ public class Board {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    List<Ship> ships;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "board_id", nullable = false)
+    private List<Ship> ships = new ArrayList<>();
 }
