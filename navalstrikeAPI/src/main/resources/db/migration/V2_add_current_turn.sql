@@ -1,0 +1,1 @@
+ALTER TABLE matches ADD COLUMN current_turn_id UUID references users(id);
