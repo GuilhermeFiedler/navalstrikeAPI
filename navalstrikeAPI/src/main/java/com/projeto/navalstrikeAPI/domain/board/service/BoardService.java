@@ -27,6 +27,7 @@ public class BoardService {
     private final BoardRepository boardRepository;
     private final ShipService shipService;
 
+    @Transactional
     public Board createBoard(){
         Board board = new Board();
         return boardRepository.save(board);
@@ -49,6 +50,9 @@ public class BoardService {
         // Validar contiguidade
         if (!areCoordinatesContiguous(request.coordinates())) {
             throw new ShipPlacementException("Coordenadas devem ser contíguas em linha reta");
+        }
+        if (request.coordinates().size() != request.type().getSize()) {
+            throw new ShipPlacementException("Quantidade de coordenadas incorreta para " + request.type());
         }
 
         Ship ship = shipService.createShip(request.type(), request.coordinates());
