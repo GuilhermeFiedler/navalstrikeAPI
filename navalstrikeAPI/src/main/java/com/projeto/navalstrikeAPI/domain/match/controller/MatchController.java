@@ -3,6 +3,7 @@ package com.projeto.navalstrikeAPI.domain.match.controller;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.CreateMatchResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
 import com.projeto.navalstrikeAPI.domain.match.service.MatchService;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +39,8 @@ public class MatchController {
             }
 
     @GetMapping("/{id}")
-    public Match get(@PathVariable UUID id){
-        return service.findById(id);
+    public MatchResponse get(@PathVariable UUID id){
+        UUID userId = (UUID) Objects.requireNonNull(Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal());
+        return service.getMatchView(id, userId);
     }
 }

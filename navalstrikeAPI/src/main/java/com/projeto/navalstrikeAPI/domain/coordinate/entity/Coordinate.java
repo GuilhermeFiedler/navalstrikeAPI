@@ -1,12 +1,16 @@
 package com.projeto.navalstrikeAPI.domain.coordinate.entity;
 
 import jakarta.persistence.Embeddable;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.Objects;
 
-@NoArgsConstructor
 @Embeddable
+@NoArgsConstructor
+@Getter
+@Setter
 public class Coordinate {
     private int x;
     private int y;
