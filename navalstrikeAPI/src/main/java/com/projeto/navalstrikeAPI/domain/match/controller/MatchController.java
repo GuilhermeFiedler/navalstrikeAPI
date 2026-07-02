@@ -34,8 +34,8 @@ public class MatchController {
     @PostMapping("/{id}/attack")
     public AttackResponse attack(@PathVariable UUID id, @RequestBody AttackRequest request){
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        return service.attack(id,userId,request);
-    }
+        return service.attack(id,request,userId);
+            }
 
     @GetMapping("/{id}")
     public Match get(@PathVariable UUID id){

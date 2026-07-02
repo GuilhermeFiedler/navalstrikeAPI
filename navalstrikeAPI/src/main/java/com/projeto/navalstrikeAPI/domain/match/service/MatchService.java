@@ -4,6 +4,7 @@ import com.projeto.navalstrikeAPI.common.enums.GameStatus;
 import com.projeto.navalstrikeAPI.common.exception.GameAlreadyStartedException;
 import com.projeto.navalstrikeAPI.common.exception.MatchNotFoundException;
 import com.projeto.navalstrikeAPI.common.exception.PlayerTurnException;
+import com.projeto.navalstrikeAPI.domain.board.dto.AttackResult;
 import com.projeto.navalstrikeAPI.domain.board.entity.Board;
 import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
@@ -65,7 +66,7 @@ public class MatchService {
             nextTurn = match.getPlayer1();
         }
         Coordinate coord = new Coordinate(request.x(), request.y());
-        boolean hit = boardService.attack(targetBoard, coord);
+        AttackResult result = boardService.attack(targetBoard, coord);
         boolean gameOver = boardService.allShipsDestroyed(targetBoard);
 
         if (gameOver) {
@@ -74,7 +75,7 @@ public class MatchService {
             match.setCurrentTurn(nextTurn);
         }
         matchRepository.save(match);
-        return new AttackResponse(hit, false, gameOver);
+        return new AttackResponse(result.hit(), result.sunk(), gameOver);
     }
 
     public Match findById(UUID id){

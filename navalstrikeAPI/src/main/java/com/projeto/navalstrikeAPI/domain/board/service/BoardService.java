@@ -1,6 +1,7 @@
 package com.projeto.navalstrikeAPI.domain.board.service;
 
 import com.projeto.navalstrikeAPI.common.exception.ShipOverlapException;
+import com.projeto.navalstrikeAPI.domain.board.dto.AttackResult;
 import com.projeto.navalstrikeAPI.domain.board.entity.Board;
 import com.projeto.navalstrikeAPI.domain.board.repository.BoardRepository;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
@@ -34,14 +35,14 @@ public class BoardService {
         boardRepository.save(board);
     }
 
-    public boolean attack(Board board, Coordinate coordinate){
+    public AttackResult attack(Board board, Coordinate coordinate){
         for (Ship ship : board.getShips()){
             if (ship.hit(coordinate)){
                 boardRepository.save(board);
-                return true;
+                return new AttackResult(true, ship.isSunk());
             }
         }
-        return false;
+        return new AttackResult(false,false);
     }
 
     public boolean allShipsDestroyed(Board board){
