@@ -3,6 +3,7 @@ package com.projeto.navalstrikeAPI.domain.user.service;
 import com.projeto.navalstrikeAPI.domain.user.dto.LoginRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.RegisterRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.TokenResponse;
+import com.projeto.navalstrikeAPI.domain.user.dto.UserResponse;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import com.projeto.navalstrikeAPI.infra.security.JwtService;
@@ -52,6 +53,14 @@ public class UserService {
                 .generateToken(user.getId(), user.getEmail(), user.getName()));
     }
     public void logout(String token) { jwtService.revokeToken(token);}
+
+    public UserResponse getUserFromToken(String token) {
+        var decoded = com.auth0.jwt.JWT.decode(token);
+        return new UserResponse(
+                java.util.UUID.fromString(decoded.getSubject()),
+                decoded.getClaim("name").asString()
+        );
+    }
 }
 
 

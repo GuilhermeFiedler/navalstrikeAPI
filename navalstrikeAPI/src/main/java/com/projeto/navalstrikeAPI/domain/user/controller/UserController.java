@@ -3,10 +3,13 @@ package com.projeto.navalstrikeAPI.domain.user.controller;
 import com.projeto.navalstrikeAPI.domain.user.dto.LoginRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.RegisterRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.TokenResponse;
+import com.projeto.navalstrikeAPI.domain.user.dto.UserResponse;
 import com.projeto.navalstrikeAPI.domain.user.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.apache.coyote.Response;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,22 +18,77 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
 
+    private static final int COOKIE_MAX_AGE = 7200; // 2 horas
+
     public UserController(UserService userService) {this.userService = userService; }
 
     @PostMapping("/register")
-    public ResponseEntity<TokenResponse> register(@RequestBody @Valid RegisterRequest request){
-        return ResponseEntity.ok(userService.register(request));
+    public ResponseEntity<UserResponse> register(@RequestBody @Valid RegisterRequest request, HttpServletResponse response){
+        TokenResponse tokenResponse = userService.register(request);
+        addTokenCookie(response, tokenResponse.token());
+        return ResponseEntity.ok(userService.getUserFromToken(tokenResponse.token()));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<TokenResponse> login(@RequestBody @Valid LoginRequest request) {
-        return ResponseEntity.ok(userService.login(request));
+    public ResponseEntity<UserResponse> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
+        TokenResponse tokenResponse = userService.login(request);
+        addTokenCookie(response, tokenResponse.token());
+        return ResponseEntity.ok(userService.getUserFromToken(tokenResponse.token()));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String header){
-        userService.logout(header.substring(7));
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response){
+        String token = extractTokenFromCookie(request);
+        if (token != null) {
+            userService.logout(token);
+        }
+        clearTokenCookie(response);
         return ResponseEntity.noContent().build();
+    }
 
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(HttpServletRequest request) {
+        String token = extractTokenFromCookie(request);
+        if (token == null) {
+            return ResponseEntity.status(401).build();
+        }
+        try {
+            return ResponseEntity.ok(userService.getUserFromToken(token));
+        } catch (Exception e) {
+            return ResponseEntity.status(401).build();
+        }
+    }
+
+    private void addTokenCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from("token", token)
+                .httpOnly(true)
+                .secure(false) // true em produção (HTTPS)
+                .path("/")
+                .maxAge(COOKIE_MAX_AGE)
+                .sameSite("Strict")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private void clearTokenCookie(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("token", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (var cookie : request.getCookies()) {
+                if ("token".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 }

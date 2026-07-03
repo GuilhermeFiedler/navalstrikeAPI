@@ -12,6 +12,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -25,14 +27,25 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
         if (accessor != null && StompCommand.CONNECT.equals(accessor.getCommand())) {
-            String token = accessor.getFirstNativeHeader("Authorization");
+            String token = null;
 
-            if (token == null || !token.startsWith("Bearer ")) {
-                throw new IllegalArgumentException("Token JWT ausente ou inválido");
+
+            String authHeader = accessor.getFirstNativeHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                token = authHeader.substring(7);
+            }
+
+
+            if (token == null) {
+                token = extractTokenFromHandshakeCookies(accessor);
+            }
+
+            if (token == null) {
+                throw new IllegalArgumentException("Token JWT ausente");
             }
 
             try {
-                var decoded = jwtService.validateToken(token.substring(7));
+                var decoded = jwtService.validateToken(token);
                 var auth = new UsernamePasswordAuthenticationToken(
                         UUID.fromString(decoded.getSubject()), null, new ArrayList<>());
                 accessor.setUser(auth);
@@ -42,5 +55,24 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
         }
 
         return message;
+    }
+
+    @SuppressWarnings("unchecked")
+    private String extractTokenFromHandshakeCookies(StompHeaderAccessor accessor) {
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes == null) return null;
+
+
+        Object cookieHeader = sessionAttributes.get("cookie");
+        if (cookieHeader == null) return null;
+
+        String cookies = cookieHeader.toString();
+        for (String part : cookies.split(";")) {
+            String trimmed = part.trim();
+            if (trimmed.startsWith("token=")) {
+                return trimmed.substring(6);
+            }
+        }
+        return null;
     }
 }
