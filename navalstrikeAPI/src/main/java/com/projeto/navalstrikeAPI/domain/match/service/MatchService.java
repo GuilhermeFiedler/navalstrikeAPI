@@ -1,6 +1,7 @@
 package com.projeto.navalstrikeAPI.domain.match.service;
 
 import com.projeto.navalstrikeAPI.common.enums.GameStatus;
+import com.projeto.navalstrikeAPI.common.enums.ShipType;
 import com.projeto.navalstrikeAPI.common.exception.GameAlreadyStartedException;
 import com.projeto.navalstrikeAPI.common.exception.MatchNotFoundException;
 import com.projeto.navalstrikeAPI.common.exception.PlayerTurnException;
@@ -12,6 +13,7 @@ import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
 import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
@@ -55,8 +57,7 @@ public class MatchService {
         User player2 = userRepository.findById(playerId).orElseThrow();
         Board board2 = boardService.createBoard();
         match.setBoardPlayer2(board2);
-        match.setCurrentTurn(match.getPlayer1());
-        match.setStatus(GameStatus.ON_GOING);
+        match.setStatus(GameStatus.PLACING);
         match.setPlayer2(player2);
         return matchRepository.save(match);
     }
@@ -65,8 +66,8 @@ public class MatchService {
     public void placeShip(UUID matchId, UUID playerId, PlaceShipRequest request) {
         Match match = findById(matchId);
 
-        if (match.getStatus() != GameStatus.WAITING) {
-            throw new ShipPlacementException("Partida já iniciada, não pode posicionar navios");
+        if (match.getStatus() != GameStatus.WAITING && match.getStatus() != GameStatus.PLACING) {
+            throw new ShipPlacementException("Não é possível posicionar navios nesta fase");
         }
 
         Board board;
@@ -79,8 +80,20 @@ public class MatchService {
         }
 
         boardService.placeShip(board, request);
-    }
 
+        if (bothPlayersReady(match)) {
+            match.setStatus(GameStatus.ON_GOING);
+            match.setCurrentTurn(match.getPlayer1());
+            matchRepository.save(match);
+        }
+    }
+    private boolean bothPlayersReady(Match match) {
+        int requiredShips = ShipType.values().length; // 5
+        boolean p1Ready = match.getBoardPlayer1().getShips().size() == requiredShips;
+        boolean p2Ready = match.getBoardPlayer2() != null
+                && match.getBoardPlayer2().getShips().size() == requiredShips;
+        return p1Ready && p2Ready;
+    }
     @Transactional
     public AttackResponse attack(UUID matchId, AttackRequest request, UUID playerId) {
         Match match = findById(matchId);
@@ -151,5 +164,16 @@ public class MatchService {
         UUID currentTurnId = match.getCurrentTurn() != null ? match.getCurrentTurn().getId() : null;
 
         return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, myBoardView, opponentBoardView);
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatchListResponse> listAvailableMatches() {
+        return matchRepository.findByStatus(GameStatus.WAITING).stream()
+                .map(match -> new MatchListResponse(
+                        match.getId(),
+                        match.getPlayer1().getName(),
+                        match.getCreatedAt()
+                ))
+                .toList();
     }
 }

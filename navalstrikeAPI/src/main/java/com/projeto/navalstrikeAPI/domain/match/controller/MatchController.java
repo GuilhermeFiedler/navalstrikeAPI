@@ -1,9 +1,6 @@
 package com.projeto.navalstrikeAPI.domain.match.controller;
 
-import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
-import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.CreateMatchResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.*;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
 import com.projeto.navalstrikeAPI.domain.match.service.MatchService;
 import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
@@ -11,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -48,5 +46,9 @@ public class MatchController {
     public void placeShip(@PathVariable UUID id, @RequestBody PlaceShipRequest request) {
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
         service.placeShip(id, userId, request);
+    }
+    @GetMapping
+    public List<MatchListResponse> listAvailable() {
+        return service.listAvailableMatches();
     }
 }
