@@ -21,6 +21,7 @@ import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
 import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
+import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,7 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final BoardService boardService;
     private final UserRepository userRepository;
+    private final MatchNotificationService notificationService;
 
     @Transactional
     public Match createMatch(UUID playerId){
@@ -59,7 +61,11 @@ public class MatchService {
         match.setBoardPlayer2(board2);
         match.setStatus(GameStatus.PLACING);
         match.setPlayer2(player2);
-        return matchRepository.save(match);
+        Match saved = matchRepository.save(match);
+
+        notificationService.notifyPlayerJoined(matchId, playerId, player2.getName());
+
+        return saved;
     }
 
     @Transactional
@@ -85,6 +91,7 @@ public class MatchService {
             match.setStatus(GameStatus.ON_GOING);
             match.setCurrentTurn(match.getPlayer1());
             matchRepository.save(match);
+            notificationService.notifyGameStarted(matchId);
         }
     }
     private boolean bothPlayersReady(Match match) {
@@ -123,6 +130,14 @@ public class MatchService {
         }
 
         matchRepository.save(match);
+
+        notificationService.notifyAttackResult(matchId, playerId, request.x(), request.y(),
+                result.hit(), result.sunk(), gameOver);
+
+        if (gameOver) {
+            notificationService.notifyGameOver(matchId, playerId);
+        }
+
         return new AttackResponse(result.hit(), result.sunk(), gameOver);
     }
 
@@ -142,9 +157,11 @@ public class MatchService {
         if(match.getPlayer1().getId().equals(playerId)){
             myBoard = match.getBoardPlayer1();
             opponentBoard = match.getBoardPlayer2();
-        } else{
+        } else if (match.getPlayer2() != null && match.getPlayer2().getId().equals(playerId)){
             myBoard = match.getBoardPlayer2();
             opponentBoard = match.getBoardPlayer1();
+        } else {
+            throw new IllegalArgumentException("Jogador não pertence a esta partida");
         }
         Set<Coordinate> hitsOnMe = myBoard.getShips().stream()
                 .flatMap(ship->ship.getHits().stream())
@@ -152,14 +169,18 @@ public class MatchService {
 
         BoardView myBoardView = new BoardView(myBoard.getShips(), hitsOnMe, myBoard.getMisses());
 
-        List<Ship> sunkShips = opponentBoard.getShips().stream()
-                .filter(Ship::isSunk)
-                .toList();
-        Set<Coordinate> hitsOnOpponent = opponentBoard.getShips().stream()
-                .flatMap(ship->ship.getHits().stream())
-                .collect(Collectors.toSet());
-
-        BoardView opponentBoardView = new BoardView(sunkShips, hitsOnOpponent, opponentBoard.getMisses());
+        BoardView opponentBoardView;
+        if (opponentBoard != null) {
+            List<Ship> sunkShips = opponentBoard.getShips().stream()
+                    .filter(Ship::isSunk)
+                    .toList();
+            Set<Coordinate> hitsOnOpponent = opponentBoard.getShips().stream()
+                    .flatMap(ship -> ship.getHits().stream())
+                    .collect(Collectors.toSet());
+            opponentBoardView = new BoardView(sunkShips, hitsOnOpponent, opponentBoard.getMisses());
+        } else {
+            opponentBoardView = null;
+        }
 
         UUID currentTurnId = match.getCurrentTurn() != null ? match.getCurrentTurn().getId() : null;
 

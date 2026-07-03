@@ -31,11 +31,11 @@ public class Match {
     @JoinColumn(name = "board_player_2_id")
     private Board boardPlayer2;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "player_1")
     private User player1;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "player_2")
     private User player2;
 
