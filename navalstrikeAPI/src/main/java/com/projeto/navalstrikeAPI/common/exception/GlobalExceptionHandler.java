@@ -1,55 +1,82 @@
 package com.projeto.navalstrikeAPI.common.exception;
 
+import com.projeto.navalstrikeAPI.common.exception.handler.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.time.LocalDateTime;
+import java.util.stream.Collectors;
+
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(MatchNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleMatchNotFound(MatchNotFoundException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleMatchNotFound(MatchNotFoundException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(GameAlreadyStartedException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public String handleGameAlreadyStarted(GameAlreadyStartedException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleGameAlreadyStarted(GameAlreadyStartedException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler(PlayerTurnException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
-    public String handlePlayerTurn(PlayerTurnException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handlePlayerTurn(PlayerTurnException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(ShipOverlapException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleShipOverlap(ShipOverlapException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleShipOverlap(ShipOverlapException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(InvalidCoordinateException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleInvalidCoordinate(InvalidCoordinateException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleInvalidCoordinate(InvalidCoordinateException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(ShipPlacementException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleShipPlacement(ShipPlacementException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleShipPlacement(ShipPlacementException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
     }
+
     @ExceptionHandler(GameFinishedException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleGameFinished(GameFinishedException ex) {
-        return ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleGameFinished(GameFinishedException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return buildResponse(message, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleAll(Exception ex) {
-        return "Erro inesperado: " + ex.getMessage();
+    public ResponseEntity<ErrorResponse> handleAll(Exception ex) {
+        return buildResponse("Erro inesperado: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<ErrorResponse> buildResponse(String message, HttpStatus status) {
+        ErrorResponse error = ErrorResponse.builder()
+                .message(message)
+                .status(status.value())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(status).body(error);
     }
 }
