@@ -148,7 +148,7 @@ public class MatchService {
 
         if (gameOver) {
             match.setStatus(GameStatus.FINISHED);
-        } else {
+        } else if (!result.hit()) {
             match.setCurrentTurn(nextTurn);
         }
 
