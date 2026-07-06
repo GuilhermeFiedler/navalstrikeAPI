@@ -4,6 +4,7 @@ import com.projeto.navalstrikeAPI.domain.match.dto.*;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
 import com.projeto.navalstrikeAPI.domain.match.service.MatchService;
 import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -22,13 +23,19 @@ public class MatchController {
     public CreateMatchResponse create(){
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
         Match match = service.createMatch(userId);
-        return new CreateMatchResponse(match.getId());
+        return new CreateMatchResponse(match.getId(), match.getCode());
     }
 
     @PostMapping("/{id}/join")
     public void join(@PathVariable UUID id){
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
         service.joinMatch(id,userId);
+    }
+
+    @PostMapping("/join-by-code")
+    public void joinByCode(@RequestBody @Valid JoinByCodeRequest request){
+        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+        service.joinMatchByCode(request.code(), userId);
     }
 
     @PostMapping("/{id}/attack")

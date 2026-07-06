@@ -26,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -47,7 +48,22 @@ public class MatchService {
         match.setStatus(GameStatus.WAITING);
         match.setBoardPlayer1(board1);
         match.setPlayer1(player1);
+        match.setCode(generateRoomCode());
         return matchRepository.save(match);
+    }
+
+    private String generateRoomCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        SecureRandom random = new SecureRandom();
+        String code;
+        do {
+            StringBuilder sb = new StringBuilder(6);
+            for (int i = 0; i < 6; i++) {
+                sb.append(chars.charAt(random.nextInt(chars.length())));
+            }
+            code = sb.toString();
+        } while (matchRepository.existsByCode(code));
+        return code;
     }
 
     @Transactional
@@ -66,6 +82,13 @@ public class MatchService {
         notificationService.notifyPlayerJoined(matchId, playerId, player2.getName());
 
         return saved;
+    }
+
+    @Transactional
+    public Match joinMatchByCode(String code, UUID playerId) {
+        Match match = matchRepository.findByCode(code.toUpperCase())
+                .orElseThrow(() -> new MatchNotFoundException("Partida não encontrada com o código: " + code));
+        return joinMatch(match.getId(), playerId);
     }
 
     @Transactional
@@ -193,6 +216,7 @@ public class MatchService {
                 .map(match -> new MatchListResponse(
                         match.getId(),
                         match.getPlayer1().getName(),
+                        match.getCode(),
                         match.getCreatedAt()
                 ))
                 .toList();

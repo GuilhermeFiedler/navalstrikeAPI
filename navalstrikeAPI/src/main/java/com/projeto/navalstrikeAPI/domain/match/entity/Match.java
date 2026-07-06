@@ -43,6 +43,9 @@ public class Match {
     @JoinColumn(name = "current_turn_id")
     private User currentTurn;
 
+    @Column(unique = true, nullable = false, length = 6)
+    private String code;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
