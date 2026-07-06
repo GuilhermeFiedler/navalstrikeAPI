@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -33,9 +34,10 @@ public class MatchController {
     }
 
     @PostMapping("/join-by-code")
-    public void joinByCode(@RequestBody @Valid JoinByCodeRequest request){
+    public Map<String, UUID> joinByCode(@RequestBody @Valid JoinByCodeRequest request){
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        service.joinMatchByCode(request.code(), userId);
+        Match match = service.joinMatchByCode(request.code(), userId);
+        return Map.of("matchId", match.getId());
     }
 
     @PostMapping("/{id}/attack")
