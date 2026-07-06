@@ -23,7 +23,7 @@ public class Board {
     @JoinColumn(name = "board_id", nullable = false)
     private List<Ship> ships = new ArrayList<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "board_misses", joinColumns = @JoinColumn(name = "board_id"))
     private Set<Coordinate> misses = new HashSet<>();
 

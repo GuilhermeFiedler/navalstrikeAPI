@@ -22,11 +22,11 @@ public class Ship {
 
     ShipType shipType;
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ship_coordinates", joinColumns = @JoinColumn(name = "ship_id"))
     private Set<Coordinate> coordinates = new HashSet<>();
 
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ship_hits", joinColumns =  @JoinColumn(name = "ship_id"))
     private Set<Coordinate> hits = new HashSet<>();
 
