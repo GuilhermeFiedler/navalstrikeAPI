@@ -221,4 +221,29 @@ public class MatchService {
                 ))
                 .toList();
     }
+
+    @Transactional
+    public void forfeit(UUID matchId, UUID playerId) {
+        Match match = findById(matchId);
+
+        if (match.getStatus() == GameStatus.FINISHED) {
+            throw new IllegalStateException("Partida já finalizada");
+        }
+
+        UUID winnerId;
+        if (match.getPlayer1().getId().equals(playerId)) {
+            winnerId = match.getPlayer2() != null ? match.getPlayer2().getId() : null;
+        } else if (match.getPlayer2() != null && match.getPlayer2().getId().equals(playerId)) {
+            winnerId = match.getPlayer1().getId();
+        } else {
+            throw new IllegalArgumentException("Jogador não pertence a esta partida");
+        }
+
+        match.setStatus(GameStatus.FINISHED);
+        matchRepository.save(match);
+
+        if (winnerId != null) {
+            notificationService.notifyForfeit(matchId, playerId, winnerId);
+        }
+    }
 }

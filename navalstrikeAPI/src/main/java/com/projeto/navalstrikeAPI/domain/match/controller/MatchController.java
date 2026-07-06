@@ -60,4 +60,10 @@ public class MatchController {
     public List<MatchListResponse> listAvailable() {
         return service.listAvailableMatches();
     }
+
+    @PostMapping("/{id}/forfeit")
+    public void forfeit(@PathVariable UUID id) {
+        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+        service.forfeit(id, userId);
+    }
 }

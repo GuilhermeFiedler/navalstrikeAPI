@@ -13,6 +13,7 @@ public record MatchEvent(
         SHIPS_PLACED,
         GAME_STARTED,
         ATTACK_RESULT,
-        GAME_OVER
+        GAME_OVER,
+        PLAYER_FORFEIT
     }
 }

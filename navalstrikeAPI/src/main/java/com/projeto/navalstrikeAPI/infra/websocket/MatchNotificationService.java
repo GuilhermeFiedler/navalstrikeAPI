@@ -13,10 +13,6 @@ public class MatchNotificationService {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    /**
-     * Enviar um evento para todos os inscritos no tópico da partida.
-     * Frontend se inscreve em: /topic/match/{matchId}
-     */
     public void notify(UUID matchId, MatchEvent event) {
         messagingTemplate.convertAndSend("/topic/match/" + matchId, event);
     }
@@ -63,6 +59,16 @@ public class MatchNotificationService {
                 matchId,
                 winnerId,
                 Map.of("winnerId", winnerId)
+        );
+        notify(matchId, event);
+    }
+
+    public void notifyForfeit(UUID matchId, UUID quitterId, UUID winnerId) {
+        var event = new MatchEvent(
+                MatchEvent.EventType.PLAYER_FORFEIT,
+                matchId,
+                quitterId,
+                Map.of("winnerId", winnerId, "quitterId", quitterId)
         );
         notify(matchId, event);
     }

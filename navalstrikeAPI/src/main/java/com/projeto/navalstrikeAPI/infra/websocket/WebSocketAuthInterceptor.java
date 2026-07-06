@@ -21,6 +21,7 @@ import java.util.UUID;
 public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private final JwtService jwtService;
+    private final WebSocketSessionRegistry sessionRegistry;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -51,6 +52,23 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                 accessor.setUser(auth);
             } catch (Exception e) {
                 throw new IllegalArgumentException("Token JWT inválido: " + e.getMessage());
+            }
+        }
+
+        if (accessor != null && StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+            String destination = accessor.getDestination();
+            if (destination != null && destination.startsWith("/topic/match/")) {
+                String matchIdStr = destination.replace("/topic/match/", "");
+                try {
+                    UUID matchId = UUID.fromString(matchIdStr);
+                    var auth = (UsernamePasswordAuthenticationToken) accessor.getUser();
+                    if (auth != null) {
+                        UUID playerId = (UUID) auth.getPrincipal();
+                        sessionRegistry.register(accessor.getSessionId(), matchId, playerId);
+                    }
+                } catch (IllegalArgumentException ignored) {
+
+                }
             }
         }
 
