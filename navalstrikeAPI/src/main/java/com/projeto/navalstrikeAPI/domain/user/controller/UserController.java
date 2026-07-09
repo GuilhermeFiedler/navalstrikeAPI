@@ -47,7 +47,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(HttpServletRequest request) {
+    public ResponseEntity<UserResponse> me(HttpServletRequest request, HttpServletResponse response) {
         String token = extractTokenFromCookie(request);
         if (token == null) {
             return ResponseEntity.status(401).build();
@@ -55,6 +55,7 @@ public class UserController {
         try {
             return ResponseEntity.ok(userService.getUserFromToken(token));
         } catch (Exception e) {
+            clearTokenCookie(response);
             return ResponseEntity.status(401).build();
         }
     }

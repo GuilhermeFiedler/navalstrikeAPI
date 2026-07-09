@@ -25,6 +25,8 @@ import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
 import java.util.List;
@@ -79,7 +81,8 @@ public class MatchService {
         match.setPlayer2(player2);
         Match saved = matchRepository.save(match);
 
-        notificationService.notifyPlayerJoined(matchId, playerId, player2.getName());
+        String playerName = player2.getName();
+        afterCommit(() -> notificationService.notifyPlayerJoined(matchId, playerId, playerName));
 
         return saved;
     }
@@ -110,11 +113,19 @@ public class MatchService {
 
         boardService.placeShip(board, request);
 
-        if (bothPlayersReady(match)) {
+        int requiredShips = ShipType.values().length;
+        boolean playerReady = board.getShips().size() == requiredShips;
+
+        if (playerReady && bothPlayersReady(match)) {
             match.setStatus(GameStatus.ON_GOING);
             match.setCurrentTurn(match.getPlayer1());
             matchRepository.save(match);
-            notificationService.notifyGameStarted(matchId);
+            afterCommit(() -> {
+                notificationService.notifyShipsPlaced(matchId, playerId);
+                notificationService.notifyGameStarted(matchId);
+            });
+        } else if (playerReady) {
+            afterCommit(() -> notificationService.notifyShipsPlaced(matchId, playerId));
         }
     }
     private boolean bothPlayersReady(Match match) {
@@ -154,12 +165,14 @@ public class MatchService {
 
         matchRepository.save(match);
 
-        notificationService.notifyAttackResult(matchId, playerId, request.x(), request.y(),
-                result.hit(), result.sunk(), gameOver);
+        afterCommit(() -> {
+            notificationService.notifyAttackResult(matchId, playerId, request.x(), request.y(),
+                    result.hit(), result.sunk(), gameOver);
 
-        if (gameOver) {
-            notificationService.notifyGameOver(matchId, playerId);
-        }
+            if (gameOver) {
+                notificationService.notifyGameOver(matchId, playerId);
+            }
+        });
 
         return new AttackResponse(result.hit(), result.sunk(), gameOver);
     }
@@ -243,7 +256,17 @@ public class MatchService {
         matchRepository.save(match);
 
         if (winnerId != null) {
-            notificationService.notifyForfeit(matchId, playerId, winnerId);
+            UUID finalWinnerId = winnerId;
+            afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
         }
+    }
+
+    private void afterCommit(Runnable action) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 }

@@ -27,6 +27,16 @@ public class MatchNotificationService {
         notify(matchId, event);
     }
 
+    public void notifyShipsPlaced(UUID matchId, UUID playerId) {
+        var event = new MatchEvent(
+                MatchEvent.EventType.SHIPS_PLACED,
+                matchId,
+                playerId,
+                null
+        );
+        notify(matchId, event);
+    }
+
     public void notifyGameStarted(UUID matchId) {
         var event = new MatchEvent(
                 MatchEvent.EventType.GAME_STARTED,

@@ -55,11 +55,11 @@ public class UserService {
     public void logout(String token) { jwtService.revokeToken(token);}
 
     public UserResponse getUserFromToken(String token) {
-        var decoded = com.auth0.jwt.JWT.decode(token);
-        return new UserResponse(
-                java.util.UUID.fromString(decoded.getSubject()),
-                decoded.getClaim("name").asString()
-        );
+        var decoded = jwtService.validateToken(token);
+        var userId = java.util.UUID.fromString(decoded.getSubject());
+        var user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("Usuário não encontrado"));
+        return new UserResponse(user.getId(), user.getName());
     }
 }
 
