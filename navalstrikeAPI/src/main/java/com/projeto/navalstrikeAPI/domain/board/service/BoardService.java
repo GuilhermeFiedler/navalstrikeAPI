@@ -79,12 +79,12 @@ public class BoardService {
         for (Ship ship : board.getShips()){
             if (ship.hit(coordinate)){
                 boardRepository.save(board);
-                return new AttackResult(true, ship.isSunk());
+                return new AttackResult(true, ship.isSunk(), ship.isSunk() ? ship.getShipType() : null);
             }
         }
         board.getMisses().add(coordinate);
         boardRepository.save(board);
-        return new AttackResult(false, false);
+        return new AttackResult(false, false, null);
     }
 
     public boolean allShipsDestroyed(Board board){

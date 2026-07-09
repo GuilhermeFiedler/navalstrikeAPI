@@ -167,14 +167,18 @@ public class MatchService {
 
         afterCommit(() -> {
             notificationService.notifyAttackResult(matchId, playerId, request.x(), request.y(),
-                    result.hit(), result.sunk(), gameOver);
+                    result.hit(), result.sunk(),
+                    result.shipType() != null ? result.shipType().name() : null,
+                    gameOver);
 
             if (gameOver) {
                 notificationService.notifyGameOver(matchId, playerId);
             }
         });
 
-        return new AttackResponse(result.hit(), result.sunk(), gameOver);
+        return new AttackResponse(result.hit(), result.sunk(),
+                result.shipType() != null ? result.shipType().name() : null,
+                gameOver);
     }
 
     @Transactional(readOnly = true)

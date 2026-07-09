@@ -1,3 +1,5 @@
 package com.projeto.navalstrikeAPI.domain.board.dto;
 
-public record AttackResult(boolean hit, boolean sunk) {}
+import com.projeto.navalstrikeAPI.common.enums.ShipType;
+
+public record AttackResult(boolean hit, boolean sunk, ShipType shipType) {}
