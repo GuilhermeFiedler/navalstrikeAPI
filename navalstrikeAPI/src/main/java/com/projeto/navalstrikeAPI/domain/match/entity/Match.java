@@ -49,6 +49,15 @@ public class Match {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
+    private LocalDateTime finishedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "winner_id")
+    private User winner;
+
+    @Column(nullable = false)
+    private boolean forfeit = false;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

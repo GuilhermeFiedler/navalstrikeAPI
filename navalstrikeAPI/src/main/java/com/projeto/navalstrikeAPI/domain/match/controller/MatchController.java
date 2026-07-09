@@ -61,6 +61,12 @@ public class MatchController {
         return service.listAvailableMatches();
     }
 
+    @GetMapping("/history")
+    public List<MatchHistoryResponse> history() {
+        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+        return service.getMatchHistory(userId);
+    }
+
     @PostMapping("/{id}/forfeit")
     public void forfeit(@PathVariable UUID id) {
         UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();

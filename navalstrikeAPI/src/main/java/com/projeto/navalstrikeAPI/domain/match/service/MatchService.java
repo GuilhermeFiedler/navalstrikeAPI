@@ -13,6 +13,7 @@ import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
 import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
@@ -29,6 +30,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -159,6 +161,8 @@ public class MatchService {
 
         if (gameOver) {
             match.setStatus(GameStatus.FINISHED);
+            match.setFinishedAt(LocalDateTime.now());
+            match.setWinner(userRepository.findById(playerId).orElseThrow());
         } else if (!result.hit()) {
             match.setCurrentTurn(nextTurn);
         }
@@ -257,12 +261,43 @@ public class MatchService {
         }
 
         match.setStatus(GameStatus.FINISHED);
+        match.setFinishedAt(LocalDateTime.now());
+        match.setForfeit(true);
+        if (winnerId != null) {
+            match.setWinner(userRepository.findById(winnerId).orElseThrow());
+        }
         matchRepository.save(match);
 
         if (winnerId != null) {
             UUID finalWinnerId = winnerId;
             afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<MatchHistoryResponse> getMatchHistory(UUID playerId) {
+        User player = userRepository.findById(playerId).orElseThrow();
+        List<Match> matches = matchRepository.findFinishedByPlayer(player);
+
+        return matches.stream().map(match -> {
+            String opponentName;
+            if (match.getPlayer1().getId().equals(playerId)) {
+                opponentName = match.getPlayer2() != null ? match.getPlayer2().getName() : "Desconhecido";
+            } else {
+                opponentName = match.getPlayer1().getName();
+            }
+
+            String result = match.getWinner() != null && match.getWinner().getId().equals(playerId)
+                    ? "VICTORY" : "DEFEAT";
+
+            return new MatchHistoryResponse(
+                    match.getId(),
+                    opponentName,
+                    result,
+                    match.getFinishedAt(),
+                    match.isForfeit()
+            );
+        }).toList();
     }
 
     private void afterCommit(Runnable action) {
