@@ -8,7 +8,7 @@ COPY navalstrikeAPI/mvnw .
 RUN chmod +x mvnw \
 RUN ./mvnw dependency:resolve
 
-COPY src ./src
+COPY navalstrikeAPI/src ./src
 RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:21-jre
