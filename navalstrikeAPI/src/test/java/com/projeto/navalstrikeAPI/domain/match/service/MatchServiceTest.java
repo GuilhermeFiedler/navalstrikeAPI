@@ -317,7 +317,7 @@ class MatchServiceTest {
         void shouldAttackAndHit() {
             AttackRequest request = new AttackRequest(3, 5);
             Coordinate coord = new Coordinate(3, 5);
-            AttackResult attackResult = new AttackResult(true, false);
+            AttackResult attackResult = new AttackResult(true, false, null);
 
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
@@ -330,7 +330,7 @@ class MatchServiceTest {
             assertThat(response.sunk()).isFalse();
             assertThat(response.gameOver()).isFalse();
             assertThat(match.getCurrentTurn()).isEqualTo(player1);
-            verify(notificationService).notifyAttackResult(match.getId(), player1.getId(), 3, 5, true, false, false);
+            verify(notificationService).notifyAttackResult(match.getId(), player1.getId(), 3, 5, true, false, null, false);
         }
 
         @Test
@@ -338,7 +338,7 @@ class MatchServiceTest {
         void shouldAttackAndMiss() {
             AttackRequest request = new AttackRequest(7, 8);
             Coordinate coord = new Coordinate(7, 8);
-            AttackResult attackResult = new AttackResult(false, false);
+            AttackResult attackResult = new AttackResult(false, false, null);
 
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
@@ -356,7 +356,7 @@ class MatchServiceTest {
         void shouldReturnGameOverWhenAllShipsDestroyed() {
             AttackRequest request = new AttackRequest(0, 0);
             Coordinate coord = new Coordinate(0, 0);
-            AttackResult attackResult = new AttackResult(true, true);
+            AttackResult attackResult = new AttackResult(true, true, ShipType.DESTROYER);
 
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
@@ -401,7 +401,7 @@ class MatchServiceTest {
             match.setCurrentTurn(player2);
             AttackRequest request = new AttackRequest(2, 3);
             Coordinate coord = new Coordinate(2, 3);
-            AttackResult attackResult = new AttackResult(true, false);
+            AttackResult attackResult = new AttackResult(true, false, null);
 
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(boardService.attack(board1, coord)).thenReturn(attackResult);
