@@ -1,5 +1,6 @@
 package com.projeto.navalstrikeAPI.domain.user.controller;
 
+import com.projeto.navalstrikeAPI.domain.user.dto.AuthResponse;
 import com.projeto.navalstrikeAPI.domain.user.dto.LoginRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.RegisterRequest;
 import com.projeto.navalstrikeAPI.domain.user.dto.TokenResponse;
@@ -23,17 +24,19 @@ public class UserController {
     public UserController(UserService userService) {this.userService = userService; }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@RequestBody @Valid RegisterRequest request, HttpServletResponse response){
+    public ResponseEntity<AuthResponse> register(@RequestBody @Valid RegisterRequest request, HttpServletResponse response){
         TokenResponse tokenResponse = userService.register(request);
         addTokenCookie(response, tokenResponse.token());
-        return ResponseEntity.ok(userService.getUserFromToken(tokenResponse.token()));
+        UserResponse user = userService.getUserFromToken(tokenResponse.token());
+        return ResponseEntity.ok(new AuthResponse(user.id(), user.name(), tokenResponse.token()));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest request, HttpServletResponse response) {
         TokenResponse tokenResponse = userService.login(request);
         addTokenCookie(response, tokenResponse.token());
-        return ResponseEntity.ok(userService.getUserFromToken(tokenResponse.token()));
+        UserResponse user = userService.getUserFromToken(tokenResponse.token());
+        return ResponseEntity.ok(new AuthResponse(user.id(), user.name(), tokenResponse.token()));
     }
 
     @PostMapping("/logout")
@@ -47,13 +50,14 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(HttpServletRequest request, HttpServletResponse response) {
+    public ResponseEntity<AuthResponse> me(HttpServletRequest request, HttpServletResponse response) {
         String token = extractTokenFromCookie(request);
         if (token == null) {
             return ResponseEntity.status(401).build();
         }
         try {
-            return ResponseEntity.ok(userService.getUserFromToken(token));
+            UserResponse user = userService.getUserFromToken(token);
+            return ResponseEntity.ok(new AuthResponse(user.id(), user.name(), token));
         } catch (Exception e) {
             clearTokenCookie(response);
             return ResponseEntity.status(401).build();
