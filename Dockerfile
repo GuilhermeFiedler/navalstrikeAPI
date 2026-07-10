@@ -2,10 +2,10 @@ FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
 
-COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-RUN chmod +x mvnw
+COPY navalstrikeAPI/pom.xml .
+COPY navalstrikeAPI/.mvn .mvn
+COPY navalstrikeAPI/mvnw .
+RUN chmod +x mvnw \
 RUN ./mvnw dependency:resolve
 
 COPY src ./src
