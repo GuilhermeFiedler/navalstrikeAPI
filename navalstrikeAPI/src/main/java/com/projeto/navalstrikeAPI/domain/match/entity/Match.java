@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @Entity
@@ -47,9 +47,9 @@ public class Match {
     private String code;
 
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
 
-    private LocalDateTime finishedAt;
+    private Instant finishedAt;
 
     @ManyToOne
     @JoinColumn(name = "winner_id")
@@ -60,6 +60,6 @@ public class Match {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt = Instant.now();
     }
 }

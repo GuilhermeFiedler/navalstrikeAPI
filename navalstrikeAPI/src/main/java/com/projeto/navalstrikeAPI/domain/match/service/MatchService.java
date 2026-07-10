@@ -30,7 +30,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -161,7 +161,7 @@ public class MatchService {
 
         if (gameOver) {
             match.setStatus(GameStatus.FINISHED);
-            match.setFinishedAt(LocalDateTime.now());
+            match.setFinishedAt(Instant.now());
             match.setWinner(userRepository.findById(playerId).orElseThrow());
         } else if (!result.hit()) {
             match.setCurrentTurn(nextTurn);
@@ -261,7 +261,7 @@ public class MatchService {
         }
 
         match.setStatus(GameStatus.FINISHED);
-        match.setFinishedAt(LocalDateTime.now());
+        match.setFinishedAt(Instant.now());
         match.setForfeit(true);
         if (winnerId != null) {
             match.setWinner(userRepository.findById(winnerId).orElseThrow());

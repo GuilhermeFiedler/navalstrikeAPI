@@ -1,6 +1,6 @@
 package com.projeto.navalstrikeAPI.domain.match.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
-public record MatchListResponse(UUID id, String hostName, String code, LocalDateTime createdAt) {}
+public record MatchListResponse(UUID id, String hostName, String code, Instant createdAt) {}
