@@ -63,10 +63,10 @@ public class UserController {
     private void addTokenCookie(HttpServletResponse response, String token) {
         ResponseCookie cookie = ResponseCookie.from("token", token)
                 .httpOnly(true)
-                .secure(false) // true em produção (HTTPS)
+                .secure(true)
                 .path("/")
                 .maxAge(COOKIE_MAX_AGE)
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
@@ -74,10 +74,10 @@ public class UserController {
     private void clearTokenCookie(HttpServletResponse response) {
         ResponseCookie cookie = ResponseCookie.from("token", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("None")
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
