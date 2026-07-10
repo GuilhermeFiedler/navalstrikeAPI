@@ -5,7 +5,7 @@ WORKDIR /app
 COPY navalstrikeAPI/pom.xml .
 COPY navalstrikeAPI/.mvn .mvn
 COPY navalstrikeAPI/mvnw .
-RUN chmod +x mvnw \
+RUN chmod +x mvnw
 RUN ./mvnw dependency:resolve
 
 COPY navalstrikeAPI/src ./src
