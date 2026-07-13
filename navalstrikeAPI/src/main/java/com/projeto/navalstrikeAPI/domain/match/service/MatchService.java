@@ -25,9 +25,8 @@ import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -43,6 +42,7 @@ public class MatchService {
     private final BoardService boardService;
     private final UserRepository userRepository;
     private final MatchNotificationService notificationService;
+    private final TransactionHelper transactionHelper;
 
     @Transactional
     public Match createMatch(UUID playerId){
@@ -236,6 +236,7 @@ public class MatchService {
         return matchRepository.findByStatus(GameStatus.WAITING).stream()
                 .map(match -> new MatchListResponse(
                         match.getId(),
+                        match.getPlayer1().getId(),
                         match.getPlayer1().getName(),
                         match.getCode(),
                         match.getCreatedAt()
@@ -301,11 +302,6 @@ public class MatchService {
     }
 
     private void afterCommit(Runnable action) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                action.run();
-            }
-        });
+        transactionHelper.afterCommit(action);
     }
 }
