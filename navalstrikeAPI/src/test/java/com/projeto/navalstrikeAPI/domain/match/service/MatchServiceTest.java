@@ -20,6 +20,7 @@ import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
 import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
+import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -52,6 +53,9 @@ class MatchServiceTest {
     @Mock
     private MatchNotificationService notificationService;
 
+    @Mock
+    private TransactionHelper transactionHelper;
+
     @InjectMocks
     private MatchService matchService;
 
@@ -63,6 +67,12 @@ class MatchServiceTest {
 
     @BeforeEach
     void setUp() {
+        lenient().doAnswer(invocation -> {
+            Runnable action = invocation.getArgument(0);
+            action.run();
+            return null;
+        }).when(transactionHelper).afterCommit(any(Runnable.class));
+
         player1 = new User();
         player1.setId(UUID.randomUUID());
         player1.setName("João");
@@ -361,6 +371,7 @@ class MatchServiceTest {
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
             when(boardService.allShipsDestroyed(board2)).thenReturn(true);
+            when(userRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
             when(matchRepository.save(match)).thenReturn(match);
 
             AttackResponse response = matchService.attack(match.getId(), request, player1.getId());
@@ -472,6 +483,7 @@ class MatchServiceTest {
             List<MatchListResponse> result = matchService.listAvailableMatches();
 
             assertThat(result).hasSize(1);
+            assertThat(result.get(0).hostId()).isEqualTo(player1.getId());
             assertThat(result.get(0).hostName()).isEqualTo("João");
             assertThat(result.get(0).code()).isEqualTo("A3X9K2");
         }
@@ -502,6 +514,7 @@ class MatchServiceTest {
         @DisplayName("deve finalizar partida quando player1 desiste")
         void shouldForfeitAsPlayer1() {
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(matchRepository.save(match)).thenReturn(match);
 
             matchService.forfeit(match.getId(), player1.getId());
@@ -514,6 +527,7 @@ class MatchServiceTest {
         @DisplayName("deve finalizar partida quando player2 desiste")
         void shouldForfeitAsPlayer2() {
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(userRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
             when(matchRepository.save(match)).thenReturn(match);
 
             matchService.forfeit(match.getId(), player2.getId());
