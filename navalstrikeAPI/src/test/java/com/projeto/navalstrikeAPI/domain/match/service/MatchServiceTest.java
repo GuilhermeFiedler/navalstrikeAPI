@@ -20,6 +20,7 @@ import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
 import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
+import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +56,9 @@ class MatchServiceTest {
 
     @Mock
     private TransactionHelper transactionHelper;
+
+    @Mock
+    private SkinService skinService;
 
     @InjectMocks
     private MatchService matchService;
@@ -340,7 +344,7 @@ class MatchServiceTest {
             assertThat(response.sunk()).isFalse();
             assertThat(response.gameOver()).isFalse();
             assertThat(match.getCurrentTurn()).isEqualTo(player1);
-            verify(notificationService).notifyAttackResult(match.getId(), player1.getId(), 3, 5, true, false, null, false);
+            verify(notificationService).notifyAttackResult(match.getId(), player1.getId(), 3, 5, true, false, null, false, null);
         }
 
         @Test
