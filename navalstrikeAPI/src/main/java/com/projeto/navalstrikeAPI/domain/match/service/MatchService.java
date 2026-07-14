@@ -23,6 +23,7 @@ import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
+import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
@@ -43,6 +44,7 @@ public class MatchService {
     private final UserRepository userRepository;
     private final MatchNotificationService notificationService;
     private final TransactionHelper transactionHelper;
+    private final SkinService skinService;
 
     @Transactional
     public Match createMatch(UUID playerId){
@@ -148,12 +150,15 @@ public class MatchService {
         }
         Board targetBoard;
         User nextTurn;
+        UUID targetPlayerId;
         if (match.getPlayer1().getId().equals(playerId)) {
             targetBoard = match.getBoardPlayer2();
             nextTurn = match.getPlayer2();
+            targetPlayerId = match.getPlayer2().getId();
         } else {
             targetBoard = match.getBoardPlayer1();
             nextTurn = match.getPlayer1();
+            targetPlayerId = match.getPlayer1().getId();
         }
         Coordinate coord = new Coordinate(request.x(), request.y());
         AttackResult result = boardService.attack(targetBoard, coord);
@@ -169,11 +174,13 @@ public class MatchService {
 
         matchRepository.save(match);
 
+        String skinSlug = result.sunk() ? skinService.getSkinSlug(targetPlayerId) : null;
+
         afterCommit(() -> {
             notificationService.notifyAttackResult(matchId, playerId, request.x(), request.y(),
                     result.hit(), result.sunk(),
                     result.shipType() != null ? result.shipType().name() : null,
-                    gameOver);
+                    gameOver, skinSlug);
 
             if (gameOver) {
                 notificationService.notifyGameOver(matchId, playerId);
@@ -197,16 +204,25 @@ public class MatchService {
 
         Board myBoard;
         Board opponentBoard;
+        UUID opponentId = null;
 
         if(match.getPlayer1().getId().equals(playerId)){
             myBoard = match.getBoardPlayer1();
             opponentBoard = match.getBoardPlayer2();
+            if (match.getPlayer2() != null) {
+                opponentId = match.getPlayer2().getId();
+            }
         } else if (match.getPlayer2() != null && match.getPlayer2().getId().equals(playerId)){
             myBoard = match.getBoardPlayer2();
             opponentBoard = match.getBoardPlayer1();
+            opponentId = match.getPlayer1().getId();
         } else {
             throw new IllegalArgumentException("Jogador não pertence a esta partida");
         }
+
+        String mySkinSlug = skinService.getSkinSlug(playerId);
+        String opponentSkinSlug = opponentId != null ? skinService.getSkinSlug(opponentId) : null;
+
         Set<Coordinate> hitsOnMe = myBoard.getShips().stream()
                 .flatMap(ship->ship.getHits().stream())
                 .collect(Collectors.toSet());
@@ -228,7 +244,7 @@ public class MatchService {
 
         UUID currentTurnId = match.getCurrentTurn() != null ? match.getCurrentTurn().getId() : null;
 
-        return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, myBoardView, opponentBoardView);
+        return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, mySkinSlug, opponentSkinSlug, myBoardView, opponentBoardView);
     }
 
     @Transactional(readOnly = true)

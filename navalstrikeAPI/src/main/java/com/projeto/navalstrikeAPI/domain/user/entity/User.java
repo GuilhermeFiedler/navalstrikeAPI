@@ -1,5 +1,6 @@
 package com.projeto.navalstrikeAPI.domain.user.entity;
 
+import com.projeto.navalstrikeAPI.domain.skin.entity.SkinPack;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.Getter;
@@ -27,5 +28,9 @@ public class User {
 
     @Column(nullable = false)
     private String password;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "equipped_skin_pack_id")
+    private SkinPack equippedSkinPack;
 
 }

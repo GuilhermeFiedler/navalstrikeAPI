@@ -47,7 +47,7 @@ public class MatchNotificationService {
         notify(matchId, event);
     }
 
-    public void notifyAttackResult(UUID matchId, UUID attackerId, int x, int y, boolean hit, boolean sunk, String shipType, boolean gameOver) {
+    public void notifyAttackResult(UUID matchId, UUID attackerId, int x, int y, boolean hit, boolean sunk, String shipType, boolean gameOver, String skinSlug) {
         var payload = new java.util.HashMap<String, Object>();
         payload.put("x", x);
         payload.put("y", y);
@@ -55,6 +55,7 @@ public class MatchNotificationService {
         payload.put("sunk", sunk);
         payload.put("shipType", shipType);
         payload.put("gameOver", gameOver);
+        payload.put("skinSlug", sunk ? skinSlug : null);
 
         var event = new MatchEvent(
                 MatchEvent.EventType.ATTACK_RESULT,
