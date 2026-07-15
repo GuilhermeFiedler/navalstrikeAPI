@@ -264,7 +264,7 @@ public class MatchService {
     public void forfeit(UUID matchId, UUID playerId) {
         Match match = findById(matchId);
 
-        if (match.getStatus() == GameStatus.FINISHED) {
+        if (match.getStatus() == GameStatus.FINISHED || match.getStatus() == GameStatus.CANCELLED) {
             throw new IllegalStateException("Partida já finalizada");
         }
 
@@ -277,18 +277,22 @@ public class MatchService {
             throw new IllegalArgumentException("Jogador não pertence a esta partida");
         }
 
+        if (winnerId == null) {
+            match.setStatus(GameStatus.CANCELLED);
+            match.setFinishedAt(Instant.now());
+            match.setForfeit(true);
+            matchRepository.save(match);
+            return;
+        }
+
         match.setStatus(GameStatus.FINISHED);
         match.setFinishedAt(Instant.now());
         match.setForfeit(true);
-        if (winnerId != null) {
-            match.setWinner(userRepository.findById(winnerId).orElseThrow());
-        }
+        match.setWinner(userRepository.findById(winnerId).orElseThrow());
         matchRepository.save(match);
 
-        if (winnerId != null) {
-            UUID finalWinnerId = winnerId;
-            afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
-        }
+        UUID finalWinnerId = winnerId;
+        afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
     }
 
     @Transactional(readOnly = true)
