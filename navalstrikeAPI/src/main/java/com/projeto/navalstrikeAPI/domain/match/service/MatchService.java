@@ -68,15 +68,21 @@ public class MatchService {
                 sb.append(chars.charAt(random.nextInt(chars.length())));
             }
             code = sb.toString();
-        } while (matchRepository.existsByCode(code));
+        } while (matchRepository.existsActiveByCode(code));
         return code;
     }
 
     @Transactional
     public Match joinMatch(UUID matchId, UUID playerId){
         Match match = findById(matchId);
-        if (match.getStatus() != GameStatus.WAITING){
+        if (match.getStatus() == GameStatus.CANCELLED) {
+            throw new IllegalStateException("Partida foi cancelada");
+        }
+        if (match.getStatus() != GameStatus.WAITING) {
             throw new GameAlreadyStartedException("Partida já iniciada");
+        }
+        if (match.getPlayer1().getId().equals(playerId)) {
+            throw new IllegalArgumentException("Não é possível entrar na própria partida");
         }
         User player2 = userRepository.findById(playerId).orElseThrow();
         Board board2 = boardService.createBoard();
@@ -93,8 +99,9 @@ public class MatchService {
 
     @Transactional
     public Match joinMatchByCode(String code, UUID playerId) {
-        Match match = matchRepository.findByCode(code.toUpperCase())
+        Match match = matchRepository.findActiveByCode(code.toUpperCase())
                 .orElseThrow(() -> new MatchNotFoundException("Partida não encontrada com o código: " + code));
+
         return joinMatch(match.getId(), playerId);
     }
 
