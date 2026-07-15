@@ -85,4 +85,24 @@ public class MatchNotificationService {
         );
         notify(matchId, event);
     }
+
+    public void notifyPlayerDisconnected(UUID matchId, UUID playerId, int timeoutSeconds) {
+        var event = new MatchEvent(
+                MatchEvent.EventType.PLAYER_DISCONNECTED,
+                matchId,
+                playerId,
+                Map.of("timeoutSeconds", timeoutSeconds)
+        );
+        notify(matchId, event);
+    }
+
+    public void notifyPlayerReconnected(UUID matchId, UUID playerId) {
+        var event = new MatchEvent(
+                MatchEvent.EventType.PLAYER_RECONNECTED,
+                matchId,
+                playerId,
+                null
+        );
+        notify(matchId, event);
+    }
 }

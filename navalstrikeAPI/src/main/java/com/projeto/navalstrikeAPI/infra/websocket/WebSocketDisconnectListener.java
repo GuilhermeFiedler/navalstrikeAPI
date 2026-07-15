@@ -1,6 +1,5 @@
 package com.projeto.navalstrikeAPI.infra.websocket;
 
-import com.projeto.navalstrikeAPI.domain.match.service.MatchService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -15,7 +14,7 @@ import java.util.UUID;
 public class WebSocketDisconnectListener {
 
     private final WebSocketSessionRegistry sessionRegistry;
-    private final MatchService matchService;
+    private final DisconnectTimerService disconnectTimerService;
 
     @EventListener
     public void handleSessionDisconnect(SessionDisconnectEvent event) {
@@ -34,11 +33,7 @@ public class WebSocketDisconnectListener {
             return;
         }
 
-        try {
-            matchService.forfeit(matchId, playerId);
-            log.info("Forfeit automático: jogador {} desconectou da partida {}", playerId, matchId);
-        } catch (Exception e) {
-            log.debug("Forfeit automático ignorado para partida {}: {}", matchId, e.getMessage());
-        }
+        disconnectTimerService.startTimer(matchId, playerId);
+        log.info("Jogador {} desconectou da partida {} - timer de reconexão iniciado", playerId, matchId);
     }
 }

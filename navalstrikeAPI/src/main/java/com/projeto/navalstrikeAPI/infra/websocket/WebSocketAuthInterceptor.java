@@ -22,6 +22,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
 
     private final JwtService jwtService;
     private final WebSocketSessionRegistry sessionRegistry;
+    private final DisconnectTimerService disconnectTimerService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -65,6 +66,8 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
                     if (auth != null) {
                         UUID playerId = (UUID) auth.getPrincipal();
                         sessionRegistry.register(accessor.getSessionId(), matchId, playerId);
+
+                        disconnectTimerService.cancelTimer(matchId, playerId);
                     }
                 } catch (IllegalArgumentException ignored) {
 

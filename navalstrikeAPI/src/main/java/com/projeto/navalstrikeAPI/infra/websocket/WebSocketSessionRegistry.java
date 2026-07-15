@@ -33,4 +33,19 @@ public class WebSocketSessionRegistry {
     public boolean isRegistered(String sessionId) {
         return sessions.containsKey(sessionId);
     }
+
+    public Optional<String> findSessionByPlayerAndMatch(UUID playerId, UUID matchId) {
+        return sessions.entrySet().stream()
+                .filter(entry -> entry.getValue().playerId().equals(playerId)
+                        && entry.getValue().matchId().equals(matchId))
+                .map(Map.Entry::getKey)
+                .findFirst();
+    }
+
+    public Optional<UUID> findMatchByPlayer(UUID playerId) {
+        return sessions.values().stream()
+                .filter(info -> info.playerId().equals(playerId))
+                .map(SessionInfo::matchId)
+                .findFirst();
+    }
 }

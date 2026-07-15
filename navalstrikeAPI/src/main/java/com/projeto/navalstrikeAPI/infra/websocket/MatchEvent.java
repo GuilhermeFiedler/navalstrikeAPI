@@ -14,6 +14,8 @@ public record MatchEvent(
         GAME_STARTED,
         ATTACK_RESULT,
         GAME_OVER,
-        PLAYER_FORFEIT
+        PLAYER_FORFEIT,
+        PLAYER_DISCONNECTED,
+        PLAYER_RECONNECTED
     }
 }
