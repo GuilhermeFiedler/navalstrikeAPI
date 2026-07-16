@@ -1,6 +1,7 @@
 package com.projeto.navalstrikeAPI.common.exception;
 
 import com.projeto.navalstrikeAPI.common.exception.handler.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -68,7 +70,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleAll(Exception ex) {
-        return buildResponse("Erro inesperado: " + ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+        log.error("Erro inesperado", ex);
+        return buildResponse("Erro interno do servidor", HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(String message, HttpStatus status) {

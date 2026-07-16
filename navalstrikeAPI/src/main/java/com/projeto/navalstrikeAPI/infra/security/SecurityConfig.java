@@ -41,13 +41,12 @@ public class SecurityConfig {
 
                 .csrf(csrf -> csrf.disable())
 
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Públicas
-                        .requestMatchers("/auth/register", "/auth/login", "/auth/me").permitAll()
+                        .requestMatchers("/auth/register", "/auth/login").permitAll()
                         .requestMatchers("/ws/**").permitAll()
-                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/h2-console/**").permitAll()
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                 .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
