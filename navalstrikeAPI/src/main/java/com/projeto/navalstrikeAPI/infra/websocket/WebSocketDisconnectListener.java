@@ -33,6 +33,11 @@ public class WebSocketDisconnectListener {
             return;
         }
 
+        if (sessionRegistry.findSessionByPlayerAndMatch(playerId, matchId).isPresent()) {
+            log.info("Jogador {} já reconectou à partida {} com nova sessão, timer não iniciado", playerId, matchId);
+            return;
+        }
+
         disconnectTimerService.startTimer(matchId, playerId);
         log.info("Jogador {} desconectou da partida {} - timer de reconexão iniciado", playerId, matchId);
     }
