@@ -1,5 +1,8 @@
 package com.projeto.navalstrikeAPI.infra.websocket;
 
+import com.projeto.navalstrikeAPI.common.enums.GameStatus;
+import com.projeto.navalstrikeAPI.domain.match.entity.Match;
+import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
@@ -15,6 +18,7 @@ public class WebSocketDisconnectListener {
 
     private final WebSocketSessionRegistry sessionRegistry;
     private final DisconnectTimerService disconnectTimerService;
+    private final MatchRepository matchRepository;
 
     @EventListener
     public void handleSessionDisconnect(SessionDisconnectEvent event) {
@@ -35,6 +39,11 @@ public class WebSocketDisconnectListener {
 
         if (sessionRegistry.findSessionByPlayerAndMatch(playerId, matchId).isPresent()) {
             log.info("Jogador {} já reconectou à partida {} com nova sessão, timer não iniciado", playerId, matchId);
+            return;
+        }
+
+        Match match = matchRepository.findById(matchId).orElse(null);
+        if (match == null || match.getStatus() == GameStatus.FINISHED || match.getStatus() == GameStatus.CANCELLED) {
             return;
         }
 
