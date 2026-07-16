@@ -12,12 +12,9 @@ import java.util.UUID;
 
 public interface MatchRepository extends JpaRepository<Match, UUID> {
     List<Match> findByStatus(GameStatus status);
-    boolean existsByCode(String code);
 
     @Query("SELECT COUNT(m) > 0 FROM Match m WHERE m.code = :code AND m.status = 'WAITING'")
     boolean existsActiveByCode(String code);
-
-    Optional<Match> findByCode(String code);
 
     @Query("SELECT m FROM Match m WHERE m.code = :code AND m.status = 'WAITING'")
     Optional<Match> findActiveByCode(String code);

@@ -63,12 +63,6 @@ public class DisconnectTimerService {
         return false;
     }
 
-    public boolean hasActiveTimer(UUID matchId, UUID playerId) {
-        String key = buildKey(matchId, playerId);
-        ScheduledFuture<?> future = activeTimers.get(key);
-        return future != null && !future.isDone();
-    }
-
     private String buildKey(UUID matchId, UUID playerId) {
         return matchId + ":" + playerId;
     }

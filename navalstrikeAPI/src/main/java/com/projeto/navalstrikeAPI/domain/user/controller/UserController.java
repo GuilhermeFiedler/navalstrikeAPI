@@ -12,10 +12,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
@@ -55,7 +52,6 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<AuthResponse> me(HttpServletRequest request) {
         String token = extractTokenFromCookie(request);
-        UUID userId = (UUID) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         UserResponse user = userService.getUserFromToken(token);
         return ResponseEntity.ok(new AuthResponse(user.id(), user.name(), token));
     }

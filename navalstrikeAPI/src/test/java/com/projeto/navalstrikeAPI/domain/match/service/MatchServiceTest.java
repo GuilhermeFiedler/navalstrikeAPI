@@ -123,7 +123,7 @@ class MatchServiceTest {
                 m.setId(UUID.randomUUID());
                 return m;
             });
-            when(matchRepository.existsByCode(anyString())).thenReturn(false);
+            when(matchRepository.existsActiveByCode(anyString())).thenReturn(false);
 
             Match result = matchService.createMatch(player1.getId());
 
@@ -184,7 +184,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve entrar na partida usando código válido")
         void shouldJoinByValidCode() {
-            when(matchRepository.findByCode("A3X9K2")).thenReturn(Optional.of(match));
+            when(matchRepository.findActiveByCode("A3X9K2")).thenReturn(Optional.of(match));
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(boardService.createBoard()).thenReturn(board2);
@@ -199,7 +199,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve lançar exceção quando código não encontrado")
         void shouldThrowWhenCodeNotFound() {
-            when(matchRepository.findByCode("XXXXXX")).thenReturn(Optional.empty());
+            when(matchRepository.findActiveByCode("XXXXXX")).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> matchService.joinMatchByCode("XXXXXX", player2.getId()))
                     .isInstanceOf(MatchNotFoundException.class)
@@ -209,7 +209,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve aceitar código em lowercase e converter para uppercase")
         void shouldAcceptLowercaseCode() {
-            when(matchRepository.findByCode("A3X9K2")).thenReturn(Optional.of(match));
+            when(matchRepository.findActiveByCode("A3X9K2")).thenReturn(Optional.of(match));
             when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(boardService.createBoard()).thenReturn(board2);
