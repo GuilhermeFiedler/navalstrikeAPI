@@ -245,7 +245,7 @@ classDiagram
 |---------|---------------|
 | **Java 21 + Spring Boot 4.1** | Ecossistema maduro, tipagem forte para lógica de jogo complexa, Virtual Threads (preview) para alta concorrência em WebSocket |
 | **PostgreSQL** | ACID compliance para consistência do estado do jogo, UUID nativo (`gen_random_uuid()`), constraints compostas para integridade |
-| **Flyway** | Versionamento do schema (V1–V11), reprodutibilidade entre ambientes, seed de dados iniciais via migrations |
+| **Flyway** | Versionamento do schema, reprodutibilidade entre ambientes, seed de dados iniciais via migrations |
 | **JWT (Stateless)** | Escalabilidade horizontal sem sessão no servidor, compatível com autenticação no handshake WebSocket, revogação via tabela dedicada |
 | **WebSocket (STOMP + SockJS)** | Comunicação instantânea essencial para multiplayer em turnos, tópicos por partida, fallback SockJS, detecção de desconexão com timer |
 | **Docker (Multi-stage)** | Imagem otimizada (build JDK / runtime JRE), cache de layers com `dependency:resolve`, deploy portável |
