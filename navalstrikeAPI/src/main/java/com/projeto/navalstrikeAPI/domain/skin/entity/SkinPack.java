@@ -6,8 +6,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -31,7 +29,4 @@ public class SkinPack {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
-
-    @OneToMany(mappedBy = "skinPack", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SkinAsset> assets = new ArrayList<>();
 }

@@ -1,9 +1,7 @@
 package com.projeto.navalstrikeAPI.domain.skin.service;
 
-import com.projeto.navalstrikeAPI.common.enums.ShipType;
 import com.projeto.navalstrikeAPI.domain.skin.dto.EquippedSkinResponse;
 import com.projeto.navalstrikeAPI.domain.skin.dto.SkinPackResponse;
-import com.projeto.navalstrikeAPI.domain.skin.entity.SkinAsset;
 import com.projeto.navalstrikeAPI.domain.skin.entity.SkinPack;
 import com.projeto.navalstrikeAPI.domain.skin.repository.SkinPackRepository;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
@@ -13,9 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,13 +47,10 @@ public class SkinService {
         SkinPack pack = user.getEquippedSkinPack();
 
         if (pack == null) {
-            return new EquippedSkinResponse(null, null, null, null);
+            return new EquippedSkinResponse(null, null, null);
         }
 
-        Map<ShipType, String> assets = pack.getAssets().stream()
-                .collect(Collectors.toMap(SkinAsset::getShipType, SkinAsset::getImageUrl));
-
-        return new EquippedSkinResponse(pack.getId(), pack.getSlug(), pack.getName(), assets);
+        return new EquippedSkinResponse(pack.getId(), pack.getSlug(), pack.getName());
     }
 
     @Transactional(readOnly = true)
@@ -68,9 +61,6 @@ public class SkinService {
     }
 
     private SkinPackResponse toResponse(SkinPack pack) {
-        Map<ShipType, String> assets = pack.getAssets().stream()
-                .collect(Collectors.toMap(SkinAsset::getShipType, SkinAsset::getImageUrl));
-
-        return new SkinPackResponse(pack.getId(), pack.getSlug(), pack.getName(), pack.getDescription(), assets);
+        return new SkinPackResponse(pack.getId(), pack.getSlug(), pack.getName(), pack.getDescription());
     }
 }
