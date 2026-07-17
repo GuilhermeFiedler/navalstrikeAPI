@@ -89,6 +89,11 @@ src/main/java/com/projeto/navalstrikeAPI/
 │   │   └── dto/
 │   ├── coordinate/            #   Value Object de coordenadas
 │   │   └── entity/
+│   ├── ranking/               #   Ranking de jogadores
+│   │   ├── controller/
+│   │   ├── service/
+│   │   ├── repository/
+│   │   └── dto/
 │   └── skin/                  #   Sistema de skins/personalização
 │       ├── controller/
 │       ├── service/
@@ -217,7 +222,8 @@ classDiagram
 - Atacar coordenadas do adversário (sistema de turnos)
 - Detecção automática de vitória (todos os navios afundados)
 - Desistência (forfeit)
-- Histórico de partidas
+- Histórico de partidas com estatísticas globais (vitórias e derrotas totais)
+- Ranking de jogadores com paginação e ordenação (victories, defeats, totalMatches)
 
 ### 🔐 Autenticação
 - Registro e login com JWT
@@ -307,7 +313,8 @@ docker run -p 8080:8080 --env-file .env navalstrike-api
 | POST | `/matches/{id}/place-ships` | Posicionar navios |
 | POST | `/matches/{id}/attack` | Atacar coordenada |
 | GET | `/matches/{id}` | Estado da partida |
-| GET | `/matches/history` | Histórico do jogador |
+| GET | `/matches/history?page=0&size=10` | Histórico paginado com estatísticas globais |
+| GET | `/ranking` | Ranking paginado com ordenação |
 | GET | `/skins/packs` | Listar packs de skins |
 | POST | `/skins/equip` | Equipar skin pack |
 

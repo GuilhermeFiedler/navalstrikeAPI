@@ -13,6 +13,7 @@ import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryPageResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
@@ -25,6 +26,8 @@ import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import org.springframework.transaction.annotation.Transactional;
@@ -326,6 +329,37 @@ public class MatchService {
                     match.isForfeit()
             );
         }).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public MatchHistoryPageResponse getMatchHistory(UUID playerId, int page, int size) {
+        User player = userRepository.findById(playerId).orElseThrow();
+        Page<Match> matches = matchRepository.findFinishedByPlayer(player, PageRequest.of(page, size));
+
+        List<MatchHistoryResponse> content = matches.getContent().stream().map(match -> {
+            String opponentName;
+            if (match.getPlayer1().getId().equals(playerId)) {
+                opponentName = match.getPlayer2() != null ? match.getPlayer2().getName() : "Desconhecido";
+            } else {
+                opponentName = match.getPlayer1().getName();
+            }
+
+            String result = match.getWinner() != null && match.getWinner().getId().equals(playerId)
+                    ? "VICTORY" : "DEFEAT";
+
+            return new MatchHistoryResponse(
+                    match.getId(),
+                    opponentName,
+                    result,
+                    match.getFinishedAt(),
+                    match.isForfeit()
+            );
+        }).toList();
+
+        long totalVictories = matchRepository.countVictories(player);
+        long totalDefeats = matchRepository.countDefeats(player);
+
+        return MatchHistoryPageResponse.of(content, page, size, matches.getTotalElements(), totalVictories, totalDefeats);
     }
 
     private void afterCommit(Runnable action) {
