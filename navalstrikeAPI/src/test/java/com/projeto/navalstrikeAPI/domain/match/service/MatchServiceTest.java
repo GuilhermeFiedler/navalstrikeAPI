@@ -12,8 +12,6 @@ import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
 import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
@@ -59,6 +57,9 @@ class MatchServiceTest {
 
     @Mock
     private SkinService skinService;
+
+    @Mock
+    private MatchQueryService matchQueryService;
 
     @InjectMocks
     private MatchService matchService;
@@ -142,7 +143,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve permitir player2 entrar em partida WAITING")
         void shouldAllowPlayer2ToJoin() {
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(boardService.createBoard()).thenReturn(board2);
             when(matchRepository.save(match)).thenReturn(match);
@@ -159,7 +160,7 @@ class MatchServiceTest {
         @DisplayName("deve lançar exceção quando partida não está em WAITING")
         void shouldThrowWhenMatchNotWaiting() {
             match.setStatus(GameStatus.ON_GOING);
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.joinMatch(match.getId(), player2.getId()))
                     .isInstanceOf(GameAlreadyStartedException.class)
@@ -170,7 +171,7 @@ class MatchServiceTest {
         @DisplayName("deve lançar exceção quando partida não encontrada")
         void shouldThrowWhenMatchNotFound() {
             UUID fakeId = UUID.randomUUID();
-            when(matchRepository.findById(fakeId)).thenReturn(Optional.empty());
+            when(matchQueryService.findById(fakeId)).thenThrow(new MatchNotFoundException("Partida não encontrada"));
 
             assertThatThrownBy(() -> matchService.joinMatch(fakeId, player2.getId()))
                     .isInstanceOf(MatchNotFoundException.class);
@@ -185,7 +186,7 @@ class MatchServiceTest {
         @DisplayName("deve entrar na partida usando código válido")
         void shouldJoinByValidCode() {
             when(matchRepository.findActiveByCode("A3X9K2")).thenReturn(Optional.of(match));
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(boardService.createBoard()).thenReturn(board2);
             when(matchRepository.save(match)).thenReturn(match);
@@ -210,7 +211,7 @@ class MatchServiceTest {
         @DisplayName("deve aceitar código em lowercase e converter para uppercase")
         void shouldAcceptLowercaseCode() {
             when(matchRepository.findActiveByCode("A3X9K2")).thenReturn(Optional.of(match));
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(boardService.createBoard()).thenReturn(board2);
             when(matchRepository.save(match)).thenReturn(match);
@@ -231,7 +232,7 @@ class MatchServiceTest {
             Set<Coordinate> coords = Set.of(new Coordinate(0, 0), new Coordinate(1, 0));
             PlaceShipRequest request = new PlaceShipRequest(ShipType.DESTROYER, coords);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             matchService.placeShip(match.getId(), player1.getId(), request);
 
@@ -248,7 +249,7 @@ class MatchServiceTest {
             Set<Coordinate> coords = Set.of(new Coordinate(0, 0), new Coordinate(1, 0));
             PlaceShipRequest request = new PlaceShipRequest(ShipType.DESTROYER, coords);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             matchService.placeShip(match.getId(), player2.getId(), request);
 
@@ -262,7 +263,6 @@ class MatchServiceTest {
             match.setPlayer2(player2);
             match.setBoardPlayer2(board2);
 
-
             for (int i = 0; i < 5; i++) {
                 board1.getShips().add(new Ship(ShipType.values()[i],
                         generateCoords(ShipType.values()[i].getSize(), i * 2, 0)));
@@ -275,7 +275,7 @@ class MatchServiceTest {
             Set<Coordinate> coords = Set.of(new Coordinate(0, 9), new Coordinate(1, 9));
             PlaceShipRequest request = new PlaceShipRequest(ShipType.DESTROYER, coords);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(matchRepository.save(match)).thenReturn(match);
 
             matchService.placeShip(match.getId(), player1.getId(), request);
@@ -292,7 +292,7 @@ class MatchServiceTest {
             Set<Coordinate> coords = Set.of(new Coordinate(0, 0), new Coordinate(1, 0));
             PlaceShipRequest request = new PlaceShipRequest(ShipType.DESTROYER, coords);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.placeShip(match.getId(), player1.getId(), request))
                     .isInstanceOf(ShipPlacementException.class)
@@ -306,7 +306,7 @@ class MatchServiceTest {
             Set<Coordinate> coords = Set.of(new Coordinate(0, 0), new Coordinate(1, 0));
             PlaceShipRequest request = new PlaceShipRequest(ShipType.DESTROYER, coords);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.placeShip(match.getId(), strangerId, request))
                     .isInstanceOf(ShipPlacementException.class)
@@ -333,7 +333,7 @@ class MatchServiceTest {
             Coordinate coord = new Coordinate(3, 5);
             AttackResult attackResult = new AttackResult(true, false, null);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
             when(boardService.allShipsDestroyed(board2)).thenReturn(false);
             when(matchRepository.save(match)).thenReturn(match);
@@ -354,7 +354,7 @@ class MatchServiceTest {
             Coordinate coord = new Coordinate(7, 8);
             AttackResult attackResult = new AttackResult(false, false, null);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
             when(boardService.allShipsDestroyed(board2)).thenReturn(false);
             when(matchRepository.save(match)).thenReturn(match);
@@ -372,7 +372,7 @@ class MatchServiceTest {
             Coordinate coord = new Coordinate(0, 0);
             AttackResult attackResult = new AttackResult(true, true, ShipType.DESTROYER);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(boardService.attack(board2, coord)).thenReturn(attackResult);
             when(boardService.allShipsDestroyed(board2)).thenReturn(true);
             when(userRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
@@ -390,7 +390,7 @@ class MatchServiceTest {
         void shouldThrowWhenNotPlayerTurn() {
             AttackRequest request = new AttackRequest(3, 5);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.attack(match.getId(), request, player2.getId()))
                     .isInstanceOf(PlayerTurnException.class)
@@ -403,7 +403,7 @@ class MatchServiceTest {
             match.setStatus(GameStatus.FINISHED);
             AttackRequest request = new AttackRequest(3, 5);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.attack(match.getId(), request, player1.getId()))
                     .isInstanceOf(IllegalStateException.class)
@@ -418,7 +418,7 @@ class MatchServiceTest {
             Coordinate coord = new Coordinate(2, 3);
             AttackResult attackResult = new AttackResult(true, false, null);
 
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(boardService.attack(board1, coord)).thenReturn(attackResult);
             when(boardService.allShipsDestroyed(board1)).thenReturn(false);
             when(matchRepository.save(match)).thenReturn(match);
@@ -427,79 +427,6 @@ class MatchServiceTest {
 
             assertThat(response.hit()).isTrue();
             verify(boardService).attack(board1, coord);
-        }
-    }
-
-    @Nested
-    @DisplayName("getMatchView")
-    class GetMatchViewTests {
-
-        @Test
-        @DisplayName("deve retornar visão do player1 corretamente")
-        void shouldReturnPlayer1View() {
-            match.setStatus(GameStatus.ON_GOING);
-            match.setPlayer2(player2);
-            match.setBoardPlayer2(board2);
-            match.setCurrentTurn(player1);
-
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
-
-            MatchResponse response = matchService.getMatchView(match.getId(), player1.getId());
-
-            assertThat(response.id()).isEqualTo(match.getId());
-            assertThat(response.status()).isEqualTo(GameStatus.ON_GOING);
-            assertThat(response.currentTurn()).isEqualTo(player1.getId());
-            assertThat(response.myBoard()).isNotNull();
-            assertThat(response.opponentBoard()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("deve retornar opponentBoard null quando player2 não entrou")
-        void shouldReturnNullOpponentBoardWhenNoPlayer2() {
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
-
-            MatchResponse response = matchService.getMatchView(match.getId(), player1.getId());
-
-            assertThat(response.opponentBoard()).isNull();
-        }
-
-        @Test
-        @DisplayName("deve lançar exceção quando jogador não pertence à partida")
-        void shouldThrowWhenPlayerNotInMatch() {
-            UUID strangerId = UUID.randomUUID();
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
-
-            assertThatThrownBy(() -> matchService.getMatchView(match.getId(), strangerId))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("Jogador não pertence a esta partida");
-        }
-    }
-
-    @Nested
-    @DisplayName("listAvailableMatches")
-    class ListAvailableMatchesTests {
-
-        @Test
-        @DisplayName("deve retornar lista de partidas em WAITING")
-        void shouldReturnWaitingMatches() {
-            when(matchRepository.findByStatus(GameStatus.WAITING)).thenReturn(List.of(match));
-
-            List<MatchListResponse> result = matchService.listAvailableMatches();
-
-            assertThat(result).hasSize(1);
-            assertThat(result.get(0).hostId()).isEqualTo(player1.getId());
-            assertThat(result.get(0).hostName()).isEqualTo("João");
-            assertThat(result.get(0).code()).isEqualTo("A3X9K2");
-        }
-
-        @Test
-        @DisplayName("deve retornar lista vazia quando não há partidas")
-        void shouldReturnEmptyList() {
-            when(matchRepository.findByStatus(GameStatus.WAITING)).thenReturn(List.of());
-
-            List<MatchListResponse> result = matchService.listAvailableMatches();
-
-            assertThat(result).isEmpty();
         }
     }
 
@@ -517,7 +444,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve finalizar partida quando player1 desiste")
         void shouldForfeitAsPlayer1() {
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(userRepository.findById(player2.getId())).thenReturn(Optional.of(player2));
             when(matchRepository.save(match)).thenReturn(match);
 
@@ -530,7 +457,7 @@ class MatchServiceTest {
         @Test
         @DisplayName("deve finalizar partida quando player2 desiste")
         void shouldForfeitAsPlayer2() {
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
             when(userRepository.findById(player1.getId())).thenReturn(Optional.of(player1));
             when(matchRepository.save(match)).thenReturn(match);
 
@@ -544,7 +471,7 @@ class MatchServiceTest {
         @DisplayName("deve lançar exceção quando partida já finalizada")
         void shouldThrowWhenMatchAlreadyFinished() {
             match.setStatus(GameStatus.FINISHED);
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.forfeit(match.getId(), player1.getId()))
                     .isInstanceOf(IllegalStateException.class)
@@ -555,7 +482,7 @@ class MatchServiceTest {
         @DisplayName("deve lançar exceção quando jogador não pertence à partida")
         void shouldThrowWhenPlayerNotInMatch() {
             UUID strangerId = UUID.randomUUID();
-            when(matchRepository.findById(match.getId())).thenReturn(Optional.of(match));
+            when(matchQueryService.findById(match.getId())).thenReturn(match);
 
             assertThatThrownBy(() -> matchService.forfeit(match.getId(), strangerId))
                     .isInstanceOf(IllegalArgumentException.class)

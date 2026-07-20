@@ -2,6 +2,7 @@ package com.projeto.navalstrikeAPI.domain.match.controller;
 
 import com.projeto.navalstrikeAPI.domain.match.dto.*;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
+import com.projeto.navalstrikeAPI.domain.match.service.MatchQueryService;
 import com.projeto.navalstrikeAPI.domain.match.service.MatchService;
 import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
 import jakarta.validation.Valid;
@@ -18,47 +19,46 @@ import java.util.UUID;
 @RequestMapping("/matches")
 @RequiredArgsConstructor
 public class MatchController {
+
     private final MatchService service;
+    private final MatchQueryService queryService;
 
     @PostMapping
-    public CreateMatchResponse create(){
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
+    public CreateMatchResponse create() {
+        UUID userId = getUserId();
         Match match = service.createMatch(userId);
         return new CreateMatchResponse(match.getId(), match.getCode());
     }
 
     @PostMapping("/{id}/join")
-    public void join(@PathVariable UUID id){
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        service.joinMatch(id,userId);
+    public void join(@PathVariable UUID id) {
+        service.joinMatch(id, getUserId());
     }
 
     @PostMapping("/join-by-code")
-    public Map<String, UUID> joinByCode(@RequestBody @Valid JoinByCodeRequest request){
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        Match match = service.joinMatchByCode(request.code(), userId);
+    public Map<String, UUID> joinByCode(@RequestBody @Valid JoinByCodeRequest request) {
+        Match match = service.joinMatchByCode(request.code(), getUserId());
         return Map.of("matchId", match.getId());
     }
 
     @PostMapping("/{id}/attack")
-    public AttackResponse attack(@PathVariable UUID id, @RequestBody AttackRequest request){
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        return service.attack(id,request,userId);
-            }
+    public AttackResponse attack(@PathVariable UUID id, @RequestBody AttackRequest request) {
+        return service.attack(id, request, getUserId());
+    }
 
     @GetMapping("/{id}")
-    public MatchResponse get(@PathVariable UUID id){
-        UUID userId = (UUID) Objects.requireNonNull(Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal());
-        return service.getMatchView(id, userId);
+    public MatchResponse get(@PathVariable UUID id) {
+        return queryService.getMatchView(id, getUserId());
     }
+
     @PostMapping("/{id}/place")
     public void placeShip(@PathVariable UUID id, @RequestBody PlaceShipRequest request) {
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        service.placeShip(id, userId, request);
+        service.placeShip(id, getUserId(), request);
     }
+
     @GetMapping
     public List<MatchListResponse> listAvailable() {
-        return service.listAvailableMatches();
+        return queryService.listAvailableMatches();
     }
 
     @GetMapping("/history")
@@ -66,13 +66,17 @@ public class MatchController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        return service.getMatchHistory(userId, page, size);
+        return queryService.getMatchHistory(getUserId(), page, size);
     }
 
     @PostMapping("/{id}/forfeit")
     public void forfeit(@PathVariable UUID id) {
-        UUID userId = (UUID) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
-        service.forfeit(id, userId);
+        service.forfeit(id, getUserId());
+    }
+
+    private UUID getUserId() {
+        return (UUID) Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getPrincipal();
     }
 }

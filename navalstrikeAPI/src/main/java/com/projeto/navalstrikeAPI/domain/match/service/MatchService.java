@@ -7,50 +7,41 @@ import com.projeto.navalstrikeAPI.common.exception.MatchNotFoundException;
 import com.projeto.navalstrikeAPI.common.exception.PlayerTurnException;
 import com.projeto.navalstrikeAPI.common.exception.ShipPlacementException;
 import com.projeto.navalstrikeAPI.domain.board.dto.AttackResult;
-import com.projeto.navalstrikeAPI.domain.board.dto.BoardView;
 import com.projeto.navalstrikeAPI.domain.board.entity.Board;
 import com.projeto.navalstrikeAPI.domain.board.service.BoardService;
 import com.projeto.navalstrikeAPI.domain.coordinate.entity.Coordinate;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackRequest;
 import com.projeto.navalstrikeAPI.domain.match.dto.AttackResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryPageResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
-import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
-import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
+import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import com.projeto.navalstrikeAPI.domain.ship.dto.PlaceShipRequest;
-import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
+import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class MatchService {
+
     private final MatchRepository matchRepository;
     private final BoardService boardService;
     private final UserRepository userRepository;
     private final MatchNotificationService notificationService;
     private final TransactionHelper transactionHelper;
     private final SkinService skinService;
+    private final MatchQueryService matchQueryService;
 
     @Transactional
-    public Match createMatch(UUID playerId){
+    public Match createMatch(UUID playerId) {
         Board board1 = boardService.createBoard();
         User player1 = userRepository.findById(playerId).orElseThrow();
         Match match = new Match();
@@ -61,23 +52,9 @@ public class MatchService {
         return matchRepository.save(match);
     }
 
-    private String generateRoomCode() {
-        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        SecureRandom random = new SecureRandom();
-        String code;
-        do {
-            StringBuilder sb = new StringBuilder(6);
-            for (int i = 0; i < 6; i++) {
-                sb.append(chars.charAt(random.nextInt(chars.length())));
-            }
-            code = sb.toString();
-        } while (matchRepository.existsActiveByCode(code));
-        return code;
-    }
-
     @Transactional
-    public Match joinMatch(UUID matchId, UUID playerId){
-        Match match = findById(matchId);
+    public Match joinMatch(UUID matchId, UUID playerId) {
+        Match match = matchQueryService.findById(matchId);
         if (match.getStatus() == GameStatus.CANCELLED) {
             throw new IllegalStateException("Partida foi cancelada");
         }
@@ -110,7 +87,7 @@ public class MatchService {
 
     @Transactional
     public void placeShip(UUID matchId, UUID playerId, PlaceShipRequest request) {
-        Match match = findById(matchId);
+        Match match = matchQueryService.findById(matchId);
 
         if (match.getStatus() != GameStatus.WAITING && match.getStatus() != GameStatus.PLACING) {
             throw new ShipPlacementException("Não é possível posicionar navios nesta fase");
@@ -142,22 +119,17 @@ public class MatchService {
             afterCommit(() -> notificationService.notifyShipsPlaced(matchId, playerId));
         }
     }
-    private boolean bothPlayersReady(Match match) {
-        int requiredShips = ShipType.values().length; // 5
-        boolean p1Ready = match.getBoardPlayer1().getShips().size() == requiredShips;
-        boolean p2Ready = match.getBoardPlayer2() != null
-                && match.getBoardPlayer2().getShips().size() == requiredShips;
-        return p1Ready && p2Ready;
-    }
+
     @Transactional
     public AttackResponse attack(UUID matchId, AttackRequest request, UUID playerId) {
-        Match match = findById(matchId);
-        if(match.getStatus() != GameStatus.ON_GOING){
+        Match match = matchQueryService.findById(matchId);
+        if (match.getStatus() != GameStatus.ON_GOING) {
             throw new IllegalStateException("Partida não está em andamento");
         }
         if (!match.getCurrentTurn().getId().equals(playerId)) {
             throw new PlayerTurnException("Não é sua vez");
         }
+
         Board targetBoard;
         User nextTurn;
         UUID targetPlayerId;
@@ -170,6 +142,7 @@ public class MatchService {
             nextTurn = match.getPlayer1();
             targetPlayerId = match.getPlayer1().getId();
         }
+
         Coordinate coord = new Coordinate(request.x(), request.y());
         AttackResult result = boardService.attack(targetBoard, coord);
         boolean gameOver = boardService.allShipsDestroyed(targetBoard);
@@ -202,77 +175,9 @@ public class MatchService {
                 gameOver);
     }
 
-    @Transactional(readOnly = true)
-    public Match findById(UUID id){
-        return matchRepository.findById(id)
-                .orElseThrow(() -> new MatchNotFoundException("Partida não encontrada"));
-    }
-
-    @Transactional(readOnly = true)
-    public MatchResponse getMatchView(UUID matchId, UUID playerId) {
-        Match match = findById(matchId);
-
-        Board myBoard;
-        Board opponentBoard;
-        UUID opponentId = null;
-
-        if(match.getPlayer1().getId().equals(playerId)){
-            myBoard = match.getBoardPlayer1();
-            opponentBoard = match.getBoardPlayer2();
-            if (match.getPlayer2() != null) {
-                opponentId = match.getPlayer2().getId();
-            }
-        } else if (match.getPlayer2() != null && match.getPlayer2().getId().equals(playerId)){
-            myBoard = match.getBoardPlayer2();
-            opponentBoard = match.getBoardPlayer1();
-            opponentId = match.getPlayer1().getId();
-        } else {
-            throw new IllegalArgumentException("Jogador não pertence a esta partida");
-        }
-
-        String mySkinSlug = skinService.getSkinSlug(playerId);
-        String opponentSkinSlug = opponentId != null ? skinService.getSkinSlug(opponentId) : null;
-
-        Set<Coordinate> hitsOnMe = myBoard.getShips().stream()
-                .flatMap(ship->ship.getHits().stream())
-                .collect(Collectors.toSet());
-
-        BoardView myBoardView = new BoardView(myBoard.getShips(), hitsOnMe, myBoard.getMisses());
-
-        BoardView opponentBoardView;
-        if (opponentBoard != null) {
-            List<Ship> sunkShips = opponentBoard.getShips().stream()
-                    .filter(Ship::isSunk)
-                    .toList();
-            Set<Coordinate> hitsOnOpponent = opponentBoard.getShips().stream()
-                    .flatMap(ship -> ship.getHits().stream())
-                    .collect(Collectors.toSet());
-            opponentBoardView = new BoardView(sunkShips, hitsOnOpponent, opponentBoard.getMisses());
-        } else {
-            opponentBoardView = null;
-        }
-
-        UUID currentTurnId = match.getCurrentTurn() != null ? match.getCurrentTurn().getId() : null;
-
-        return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, mySkinSlug, opponentSkinSlug, myBoardView, opponentBoardView);
-    }
-
-    @Transactional(readOnly = true)
-    public List<MatchListResponse> listAvailableMatches() {
-        return matchRepository.findByStatus(GameStatus.WAITING).stream()
-                .map(match -> new MatchListResponse(
-                        match.getId(),
-                        match.getPlayer1().getId(),
-                        match.getPlayer1().getName(),
-                        match.getCode(),
-                        match.getCreatedAt()
-                ))
-                .toList();
-    }
-
     @Transactional
     public void forfeit(UUID matchId, UUID playerId) {
-        Match match = findById(matchId);
+        Match match = matchQueryService.findById(matchId);
 
         if (match.getStatus() == GameStatus.FINISHED || match.getStatus() == GameStatus.CANCELLED) {
             throw new IllegalStateException("Partida já finalizada");
@@ -305,61 +210,26 @@ public class MatchService {
         afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
     }
 
-    @Transactional(readOnly = true)
-    public List<MatchHistoryResponse> getMatchHistory(UUID playerId) {
-        User player = userRepository.findById(playerId).orElseThrow();
-        List<Match> matches = matchRepository.findFinishedByPlayer(player);
-
-        return matches.stream().map(match -> {
-            String opponentName;
-            if (match.getPlayer1().getId().equals(playerId)) {
-                opponentName = match.getPlayer2() != null ? match.getPlayer2().getName() : "Desconhecido";
-            } else {
-                opponentName = match.getPlayer1().getName();
-            }
-
-            String result = match.getWinner() != null && match.getWinner().getId().equals(playerId)
-                    ? "VICTORY" : "DEFEAT";
-
-            return new MatchHistoryResponse(
-                    match.getId(),
-                    opponentName,
-                    result,
-                    match.getFinishedAt(),
-                    match.isForfeit()
-            );
-        }).toList();
+    private boolean bothPlayersReady(Match match) {
+        int requiredShips = ShipType.values().length;
+        boolean p1Ready = match.getBoardPlayer1().getShips().size() == requiredShips;
+        boolean p2Ready = match.getBoardPlayer2() != null
+                && match.getBoardPlayer2().getShips().size() == requiredShips;
+        return p1Ready && p2Ready;
     }
 
-    @Transactional(readOnly = true)
-    public MatchHistoryPageResponse getMatchHistory(UUID playerId, int page, int size) {
-        User player = userRepository.findById(playerId).orElseThrow();
-        Page<Match> matches = matchRepository.findFinishedByPlayer(player, PageRequest.of(page, size));
-
-        List<MatchHistoryResponse> content = matches.getContent().stream().map(match -> {
-            String opponentName;
-            if (match.getPlayer1().getId().equals(playerId)) {
-                opponentName = match.getPlayer2() != null ? match.getPlayer2().getName() : "Desconhecido";
-            } else {
-                opponentName = match.getPlayer1().getName();
+    private String generateRoomCode() {
+        String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        SecureRandom random = new SecureRandom();
+        String code;
+        do {
+            StringBuilder sb = new StringBuilder(6);
+            for (int i = 0; i < 6; i++) {
+                sb.append(chars.charAt(random.nextInt(chars.length())));
             }
-
-            String result = match.getWinner() != null && match.getWinner().getId().equals(playerId)
-                    ? "VICTORY" : "DEFEAT";
-
-            return new MatchHistoryResponse(
-                    match.getId(),
-                    opponentName,
-                    result,
-                    match.getFinishedAt(),
-                    match.isForfeit()
-            );
-        }).toList();
-
-        long totalVictories = matchRepository.countVictories(player);
-        long totalDefeats = matchRepository.countDefeats(player);
-
-        return MatchHistoryPageResponse.of(content, page, size, matches.getTotalElements(), totalVictories, totalDefeats);
+            code = sb.toString();
+        } while (matchRepository.existsActiveByCode(code));
+        return code;
     }
 
     private void afterCommit(Runnable action) {
