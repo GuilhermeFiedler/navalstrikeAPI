@@ -9,6 +9,8 @@ public record MatchResponse(
         UUID id,
         GameStatus status,
         UUID currentTurn,
+        String myName,
+        String opponentName,
         String mySkinSlug,
         String opponentSkinSlug,
         BoardView myBoard,

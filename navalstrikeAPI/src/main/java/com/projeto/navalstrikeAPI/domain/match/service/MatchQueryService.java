@@ -47,17 +47,23 @@ public class MatchQueryService {
         Board myBoard;
         Board opponentBoard;
         UUID opponentId = null;
+        String myName;
+        String opponentName = null;
 
         if (match.getPlayer1().getId().equals(playerId)) {
             myBoard = match.getBoardPlayer1();
             opponentBoard = match.getBoardPlayer2();
+            myName = match.getPlayer1().getName();
             if (match.getPlayer2() != null) {
                 opponentId = match.getPlayer2().getId();
+                opponentName = match.getPlayer2().getName();
             }
         } else if (match.getPlayer2() != null && match.getPlayer2().getId().equals(playerId)) {
             myBoard = match.getBoardPlayer2();
             opponentBoard = match.getBoardPlayer1();
+            myName = match.getPlayer2().getName();
             opponentId = match.getPlayer1().getId();
+            opponentName = match.getPlayer1().getName();
         } else {
             throw new IllegalArgumentException("Jogador não pertence a esta partida");
         }
@@ -86,7 +92,7 @@ public class MatchQueryService {
 
         UUID currentTurnId = match.getCurrentTurn() != null ? match.getCurrentTurn().getId() : null;
 
-        return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, mySkinSlug, opponentSkinSlug, myBoardView, opponentBoardView);
+        return new MatchResponse(match.getId(), match.getStatus(), currentTurnId, myName, opponentName, mySkinSlug, opponentSkinSlug, myBoardView, opponentBoardView);
     }
 
     @Transactional(readOnly = true)

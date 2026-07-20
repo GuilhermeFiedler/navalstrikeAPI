@@ -119,6 +119,8 @@ class MatchQueryServiceTest {
             assertThat(response.id()).isEqualTo(match.getId());
             assertThat(response.status()).isEqualTo(GameStatus.ON_GOING);
             assertThat(response.currentTurn()).isEqualTo(player1.getId());
+            assertThat(response.myName()).isEqualTo("João");
+            assertThat(response.opponentName()).isEqualTo("Maria");
             assertThat(response.myBoard()).isNotNull();
             assertThat(response.opponentBoard()).isNotNull();
         }
