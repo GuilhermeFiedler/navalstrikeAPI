@@ -42,10 +42,4 @@ public class WebSocketSessionRegistry {
                 .findFirst();
     }
 
-    public Optional<UUID> findMatchByPlayer(UUID playerId) {
-        return sessions.values().stream()
-                .filter(info -> info.playerId().equals(playerId))
-                .map(SessionInfo::matchId)
-                .findFirst();
-    }
 }
