@@ -39,6 +39,7 @@ public class MatchService {
     private final TransactionHelper transactionHelper;
     private final SkinService skinService;
     private final MatchQueryService matchQueryService;
+    private final MatchMetricsService matchMetricsService;
 
     @Transactional
     public Match createMatch(UUID playerId) {
@@ -49,7 +50,9 @@ public class MatchService {
         match.setBoardPlayer1(board1);
         match.setPlayer1(player1);
         match.setCode(generateRoomCode());
-        return matchRepository.save(match);
+        Match saved = matchRepository.save(match);
+        matchMetricsService.matchCreated();
+        return saved;
     }
 
     @Transactional
@@ -151,6 +154,7 @@ public class MatchService {
             match.setStatus(GameStatus.FINISHED);
             match.setFinishedAt(Instant.now());
             match.setWinner(userRepository.findById(playerId).orElseThrow());
+            matchMetricsService.matchFinished();
         } else if (!result.hit()) {
             match.setCurrentTurn(nextTurn);
         }
@@ -205,6 +209,7 @@ public class MatchService {
         match.setForfeit(true);
         match.setWinner(userRepository.findById(winnerId).orElseThrow());
         matchRepository.save(match);
+        matchMetricsService.matchFinished();
 
         UUID finalWinnerId = winnerId;
         afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
