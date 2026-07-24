@@ -50,8 +50,13 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/**").access((authentication, context) -> {
                             String remoteAddr = context.getRequest().getRemoteAddr();
-                            boolean isLocal = "127.0.0.1".equals(remoteAddr) || "::1".equals(remoteAddr) || "0:0:0:0:0:0:0:1".equals(remoteAddr);
-                            return new AuthorizationDecision(isLocal);
+                            boolean isLocal = "127.0.0.1".equals(remoteAddr)
+                                    || "::1".equals(remoteAddr)
+                                    || "0:0:0:0:0:0:0:1".equals(remoteAddr);
+                            boolean isDockerNetwork = remoteAddr.startsWith("172.")
+                                    || remoteAddr.startsWith("192.168.")
+                                    || remoteAddr.startsWith("10.");
+                            return new AuthorizationDecision(isLocal || isDockerNetwork);
                         })
                 .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
