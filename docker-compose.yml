@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:16
+    container_name: navalstrike-db
     environment:
       POSTGRES_DB: navalstrike
       POSTGRES_USER: postgres
@@ -9,21 +10,38 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   api:
     build: .
+    container_name: navalstrike-api
     ports:
       - "8080:8080"
     environment:
       DATABASE_URL: jdbc:postgresql://db:5432/navalstrike
       DATABASE_USERNAME: postgres
       DATABASE_PASSWORD: postgres
-      JWT_SECRET: minha-chave-secreta
+      JWT_SECRET: minha-chave-secreta-dev
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: navalstrike-jaeger
+    ports:
+      - "16686:16686"
+      - "4318:4318"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
 
   prometheus:
-    image: prom/prometheus:v2.53.0
+    image: prom/prometheus:latest
+    container_name: navalstrike-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -31,17 +49,5 @@ services:
     depends_on:
       - api
 
-  grafana:
-    image: grafana/grafana:11.1.0
-    ports:
-      - "3000:3000"
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    volumes:
-      - grafana-data:/var/lib/grafana
-    depends_on:
-      - prometheus
-
 volumes:
   pgdata:
-  grafana-data:
