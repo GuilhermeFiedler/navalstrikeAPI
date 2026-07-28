@@ -1,14 +1,19 @@
 package com.projeto.navalstrikeAPI.infra.security;
 
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,7 +27,35 @@ import java.util.List;
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
 
+    @Value("${metrics.auth.username:prometheus}")
+    private String metricsUsername;
+
+    @Value("${metrics.auth.password:prometheus}")
+    private String metricsPassword;
+
     public SecurityConfig(JwtFilter jwtFilter) { this.jwtFilter = jwtFilter; }
+
+    @Bean
+    public UserDetailsService metricsUserDetailsService(PasswordEncoder encoder) {
+        var user = User.builder()
+                .username(metricsUsername)
+                .password(encoder.encode(metricsPassword))
+                .roles("METRICS")
+                .build();
+        return new InMemoryUserDetailsManager(user);
+    }
+
+    @Bean
+    @Order(1)
+    public SecurityFilterChain actuatorFilterChain(HttpSecurity http) throws Exception {
+        return http
+                .securityMatcher("/actuator/prometheus")
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .httpBasic(basic -> {})
+                .build();
+    }
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -35,6 +68,7 @@ public class SecurityConfig {
         return source;
     }
     @Bean
+    @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
 

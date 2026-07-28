@@ -2,7 +2,21 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'navalstrike-api'
+  - job_name: 'navalstrike-metrics'
+    scheme: https
     metrics_path: '/actuator/prometheus'
+    basic_auth:
+      username: 'prometheus'
+      password: 'prometheus'
+    static_configs:
+      - targets: ['navalstrikeapi.onrender.com']
+        labels:
+          application: 'prometheus-grafana'
+
+  - job_name: 'navalstrike-apilocal'
+    metrics_path: '/actuator/prometheus'
+    basic_auth:
+      username: 'prometheus'
+      password: 'prometheus'
     static_configs:
       - targets: ['api:8080']
