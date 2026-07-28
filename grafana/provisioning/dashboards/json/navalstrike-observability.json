@@ -50,7 +50,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
           "legendFormat": "P95 {{uri}}",
           "refId": "A"
         }
@@ -74,14 +74,14 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
           "legendFormat": "P99 {{uri}}",
           "refId": "A"
         }
       ]
     },
     {
-      "title": "Taxa de Erros (5xx)",
+      "title": "Taxa de Erros (4xx e 5xx)",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -92,16 +92,20 @@
             "drawStyle": "bars",
             "lineWidth": 1,
             "fillOpacity": 50
-          },
-          "color": { "mode": "fixed", "fixedColor": "red" }
+          }
         },
         "overrides": []
       },
       "targets": [
         {
           "expr": "sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", status=~\"5..\"}[1m])) by (uri, status)",
-          "legendFormat": "{{status}} {{uri}}",
+          "legendFormat": "5xx {{status}} {{uri}}",
           "refId": "A"
+        },
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", status=~\"4..\", uri!=\"UNKNOWN\"}[1m])) by (uri, status)",
+          "legendFormat": "4xx {{status}} {{uri}}",
+          "refId": "B"
         }
       ]
     },
@@ -118,28 +122,16 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"navalstrike-api\"}[5m])) by (method, uri) / sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\"}[5m])) by (method, uri)",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri) / sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri)",
           "legendFormat": "{{method}} {{uri}}",
           "refId": "A",
           "format": "table",
           "instant": true
         }
-      ],
-      "transformations": [
-        {
-          "id": "organize",
-          "options": {
-            "renameByName": {
-              "method": "Método",
-              "uri": "Endpoint",
-              "Value": "Latência Média (s)"
-            }
-          }
-        }
       ]
     },
     {
-      "title": "Hibernate - Queries Executadas",
+      "title": "Hibernate - Queries Executadas/s",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -156,19 +148,24 @@
       },
       "targets": [
         {
-          "expr": "rate(hibernate_query_executions_total{job=\"navalstrike-api\"}[1m])",
-          "legendFormat": "Query Executions",
+          "expr": "rate(hibernate_query_execution_total{job=\"navalstrike-api\"}[1m])",
+          "legendFormat": "Queries",
           "refId": "A"
         },
         {
           "expr": "rate(hibernate_entities_loads_total{job=\"navalstrike-api\"}[1m])",
           "legendFormat": "Entity Loads",
           "refId": "B"
+        },
+        {
+          "expr": "rate(hibernate_statements_total{job=\"navalstrike-api\"}[1m])",
+          "legendFormat": "Statements",
+          "refId": "C"
         }
       ]
     },
     {
-      "title": "Hibernate - Tempo Máximo de Query",
+      "title": "Hibernate - Tempo Máximo de Query (ms)",
       "type": "stat",
       "gridPos": { "h": 8, "w": 6, "x": 12, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -187,7 +184,7 @@
       },
       "targets": [
         {
-          "expr": "hibernate_query_executions_max_seconds{job=\"navalstrike-api\"} * 1000",
+          "expr": "hibernate_query_execution_max_seconds{job=\"navalstrike-api\"} * 1000",
           "legendFormat": "Max Query Time",
           "refId": "A"
         }
@@ -199,7 +196,7 @@
       }
     },
     {
-      "title": "HikariCP - Conexões Ativas",
+      "title": "HikariCP - Conexões",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 6, "x": 18, "y": 24 },
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -325,5 +322,5 @@
   "timezone": "browser",
   "title": "Naval Strike - Observabilidade",
   "uid": "navalstrike-observability",
-  "version": 1
+  "version": 2
 }
