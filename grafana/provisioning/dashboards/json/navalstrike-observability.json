@@ -7,6 +7,27 @@
   "graphTooltip": 1,
   "id": null,
   "links": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "navalstrike-metrics|navalstrike-apilocal",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "definition": "label_values(http_server_requests_seconds_count, job)",
+        "includeAll": true,
+        "label": "Ambiente",
+        "multi": true,
+        "name": "job",
+        "query": "label_values(http_server_requests_seconds_count, job)",
+        "refresh": 1,
+        "type": "query"
+      }
+    ]
+  },
   "panels": [
     {
       "title": "Requisições por Segundo",
@@ -26,7 +47,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\"}[1m])) by (uri)",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$job\"}[1m])) by (uri)",
           "legendFormat": "{{uri}}",
           "refId": "A"
         }
@@ -50,7 +71,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\"$job\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
           "legendFormat": "P95 {{uri}}",
           "refId": "A"
         }
@@ -74,7 +95,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=~\"$job\", uri!=\"/actuator/prometheus\"}[5m])) by (le, uri))",
           "legendFormat": "P99 {{uri}}",
           "refId": "A"
         }
@@ -98,12 +119,12 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", status=~\"5..\"}[1m])) by (uri, status)",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$job\", status=~\"5..\"}[1m])) by (uri, status)",
           "legendFormat": "5xx {{status}} {{uri}}",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", status=~\"4..\", uri!=\"UNKNOWN\"}[1m])) by (uri, status)",
+          "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$job\", status=~\"4..\", uri!=\"UNKNOWN\"}[1m])) by (uri, status)",
           "legendFormat": "4xx {{status}} {{uri}}",
           "refId": "B"
         }
@@ -122,7 +143,7 @@
       },
       "targets": [
         {
-          "expr": "sum(rate(http_server_requests_seconds_sum{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri) / sum(rate(http_server_requests_seconds_count{job=\"navalstrike-api\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri)",
+          "expr": "sum(rate(http_server_requests_seconds_sum{job=~\"$job\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri) / sum(rate(http_server_requests_seconds_count{job=~\"$job\", uri!=\"/actuator/prometheus\", uri!=\"UNKNOWN\"}[5m])) by (method, uri)",
           "legendFormat": "{{method}} {{uri}}",
           "refId": "A",
           "format": "table",
@@ -148,17 +169,17 @@
       },
       "targets": [
         {
-          "expr": "rate(hibernate_query_execution_total{job=\"navalstrike-api\"}[1m])",
+          "expr": "rate(hibernate_query_execution_total{job=~\"$job\"}[1m])",
           "legendFormat": "Queries",
           "refId": "A"
         },
         {
-          "expr": "rate(hibernate_entities_loads_total{job=\"navalstrike-api\"}[1m])",
+          "expr": "rate(hibernate_entities_loads_total{job=~\"$job\"}[1m])",
           "legendFormat": "Entity Loads",
           "refId": "B"
         },
         {
-          "expr": "rate(hibernate_statements_total{job=\"navalstrike-api\"}[1m])",
+          "expr": "rate(hibernate_statements_total{job=~\"$job\"}[1m])",
           "legendFormat": "Statements",
           "refId": "C"
         }
@@ -184,7 +205,7 @@
       },
       "targets": [
         {
-          "expr": "hibernate_query_execution_max_seconds{job=\"navalstrike-api\"} * 1000",
+          "expr": "hibernate_query_execution_max_seconds{job=~\"$job\"} * 1000",
           "legendFormat": "Max Query Time",
           "refId": "A"
         }
@@ -213,17 +234,17 @@
       },
       "targets": [
         {
-          "expr": "hikaricp_connections_active{job=\"navalstrike-api\"}",
+          "expr": "hikaricp_connections_active{job=~\"$job\"}",
           "legendFormat": "Active",
           "refId": "A"
         },
         {
-          "expr": "hikaricp_connections_idle{job=\"navalstrike-api\"}",
+          "expr": "hikaricp_connections_idle{job=~\"$job\"}",
           "legendFormat": "Idle",
           "refId": "B"
         },
         {
-          "expr": "hikaricp_connections_pending{job=\"navalstrike-api\"}",
+          "expr": "hikaricp_connections_pending{job=~\"$job\"}",
           "legendFormat": "Pending",
           "refId": "C"
         }
@@ -247,12 +268,12 @@
       },
       "targets": [
         {
-          "expr": "jvm_memory_used_bytes{job=\"navalstrike-api\", area=\"heap\"}",
+          "expr": "jvm_memory_used_bytes{job=~\"$job\", area=\"heap\"}",
           "legendFormat": "Used {{id}}",
           "refId": "A"
         },
         {
-          "expr": "jvm_memory_max_bytes{job=\"navalstrike-api\", area=\"heap\"}",
+          "expr": "jvm_memory_max_bytes{job=~\"$job\", area=\"heap\"}",
           "legendFormat": "Max {{id}}",
           "refId": "B"
         }
@@ -278,7 +299,7 @@
       },
       "targets": [
         {
-          "expr": "jvm_threads_live_threads{job=\"navalstrike-api\"}",
+          "expr": "jvm_threads_live_threads{job=~\"$job\"}",
           "legendFormat": "Live Threads",
           "refId": "A"
         }
@@ -307,7 +328,7 @@
       },
       "targets": [
         {
-          "expr": "rate(jvm_gc_pause_seconds_sum{job=\"navalstrike-api\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{job=~\"$job\"}[1m])",
           "legendFormat": "{{action}} {{cause}}",
           "refId": "A"
         }
@@ -316,7 +337,6 @@
   ],
   "schemaVersion": 39,
   "tags": ["navalstrike", "observability"],
-  "templating": { "list": [] },
   "time": { "from": "now-30m", "to": "now" },
   "timepicker": {},
   "timezone": "browser",
