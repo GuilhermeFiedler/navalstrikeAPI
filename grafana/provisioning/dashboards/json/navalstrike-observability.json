@@ -333,6 +333,32 @@
           "refId": "A"
         }
       ]
+    },
+    {
+      "title": "Jaeger - Traces",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 40 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": { "type": "auto" }
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "queryType": "search",
+          "service": "navalstrikeAPI",
+          "refId": "A"
+        }
+      ],
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      }
     }
   ],
   "schemaVersion": 39,
