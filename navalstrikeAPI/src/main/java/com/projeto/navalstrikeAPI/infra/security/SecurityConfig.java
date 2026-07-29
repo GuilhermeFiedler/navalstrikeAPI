@@ -1,6 +1,5 @@
 package com.projeto.navalstrikeAPI.infra.security;
 
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,7 +32,9 @@ public class SecurityConfig {
     @Value("${metrics.auth.password:prometheus}")
     private String metricsPassword;
 
-    public SecurityConfig(JwtFilter jwtFilter) { this.jwtFilter = jwtFilter; }
+    public SecurityConfig(JwtFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
 
     @Bean
     public UserDetailsService metricsUserDetailsService(PasswordEncoder encoder) {
@@ -53,9 +54,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .httpBasic(basic -> {})
+                .httpBasic(basic -> {
+                })
                 .build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -67,12 +70,14 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
     @Bean
     @Order(2)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
 
-                .cors(cors-> {})
+                .cors(cors -> {
+                })
 
                 .csrf(csrf -> csrf.disable())
 
@@ -92,13 +97,13 @@ public class SecurityConfig {
                                     || remoteAddr.startsWith("10.");
                             return new AuthorizationDecision(isLocal || isDockerNetwork);
                         })
-                .anyRequest().authenticated())
+                        .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-            return new BCryptPasswordEncoder();
-        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+}
