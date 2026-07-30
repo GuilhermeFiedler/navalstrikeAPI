@@ -17,7 +17,6 @@ import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -35,6 +34,7 @@ public class MatchQueryService {
     private final MatchRepository matchRepository;
     private final UserRepository userRepository;
     private final SkinService skinService;
+    private final PlayerStatsService playerStatsService;
 
     @Transactional(readOnly = true)
     public Match findById(UUID id) {
@@ -135,17 +135,9 @@ public class MatchQueryService {
             );
         }).toList();
 
-        PlayerStatsDTO stats = getPlayerStats(playerId);
+        PlayerStatsDTO stats = playerStatsService.getPlayerStats(playerId);
 
         return MatchHistoryPageResponse.of(content, page, size, matches.getTotalElements(), stats.totalVictories(), stats.totalDefeats());
     }
 
-    @Cacheable(value = "playerStats", key = "#playerId")
-    @Transactional(readOnly = true)
-    public PlayerStatsDTO getPlayerStats(UUID playerId) {
-        User player = userRepository.findById(playerId).orElseThrow();
-        long totalVictories = matchRepository.countVictories(player);
-        long totalDefeats = matchRepository.countDefeats(player);
-        return new PlayerStatsDTO(totalVictories, totalDefeats);
-    }
 }

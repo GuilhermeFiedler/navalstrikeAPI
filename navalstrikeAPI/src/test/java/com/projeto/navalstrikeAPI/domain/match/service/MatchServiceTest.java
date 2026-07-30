@@ -61,6 +61,12 @@ class MatchServiceTest {
     @Mock
     private MatchQueryService matchQueryService;
 
+    @Mock
+    private MatchMetricsService matchMetricsService;
+
+    @Mock
+    private org.springframework.cache.CacheManager cacheManager;
+
     @InjectMocks
     private MatchService matchService;
 

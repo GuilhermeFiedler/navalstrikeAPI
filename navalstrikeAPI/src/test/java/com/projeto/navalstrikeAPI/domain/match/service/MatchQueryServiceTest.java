@@ -39,6 +39,9 @@ class MatchQueryServiceTest {
     @Mock
     private SkinService skinService;
 
+    @Mock
+    private PlayerStatsService playerStatsService;
+
     @InjectMocks
     private MatchQueryService matchQueryService;
 
