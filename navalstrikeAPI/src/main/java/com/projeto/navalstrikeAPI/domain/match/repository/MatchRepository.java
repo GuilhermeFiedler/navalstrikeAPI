@@ -21,10 +21,14 @@ public interface MatchRepository extends JpaRepository<Match, UUID> {
     @Query("SELECT m FROM Match m WHERE m.code = :code AND m.status = 'WAITING'")
     Optional<Match> findActiveByCode(String code);
 
-    @Query("SELECT m FROM Match m WHERE m.status = 'FINISHED' AND (m.player1 = :player OR m.player2 = :player) ORDER BY m.finishedAt DESC")
-    List<Match> findFinishedByPlayer(User player);
-
-    @Query("SELECT m FROM Match m WHERE m.status = 'FINISHED' AND (m.player1 = :player OR m.player2 = :player) ORDER BY m.finishedAt DESC")
+    @Query(value = "SELECT m FROM Match m " +
+           "JOIN FETCH m.player1 " +
+           "JOIN FETCH m.player2 " +
+           "LEFT JOIN FETCH m.winner " +
+           "WHERE m.status = 'FINISHED' AND (m.player1 = :player OR m.player2 = :player) " +
+           "ORDER BY m.finishedAt DESC",
+           countQuery = "SELECT COUNT(m) FROM Match m " +
+           "WHERE m.status = 'FINISHED' AND (m.player1 = :player OR m.player2 = :player)")
     Page<Match> findFinishedByPlayer(User player, Pageable pageable);
 
     @Query("SELECT COUNT(m) FROM Match m WHERE m.status = 'FINISHED' AND m.winner = :player")
