@@ -21,6 +21,7 @@ import com.projeto.navalstrikeAPI.infra.transaction.TransactionHelper;
 import com.projeto.navalstrikeAPI.infra.websocket.MatchNotificationService;
 import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class MatchService {
     private final SkinService skinService;
     private final MatchQueryService matchQueryService;
     private final MatchMetricsService matchMetricsService;
+    private final CacheManager cacheManager;
 
     @Transactional
     public Match createMatch(UUID playerId) {
@@ -155,6 +157,8 @@ public class MatchService {
             match.setFinishedAt(Instant.now());
             match.setWinner(userRepository.findById(playerId).orElseThrow());
             matchMetricsService.matchFinished();
+            evictPlayerStatsCache(match.getPlayer1().getId());
+            evictPlayerStatsCache(match.getPlayer2().getId());
         } else if (!result.hit()) {
             match.setCurrentTurn(nextTurn);
         }
@@ -210,6 +214,8 @@ public class MatchService {
         match.setWinner(userRepository.findById(winnerId).orElseThrow());
         matchRepository.save(match);
         matchMetricsService.matchFinished();
+        evictPlayerStatsCache(match.getPlayer1().getId());
+        evictPlayerStatsCache(match.getPlayer2().getId());
 
         UUID finalWinnerId = winnerId;
         afterCommit(() -> notificationService.notifyForfeit(matchId, playerId, finalWinnerId));
@@ -239,5 +245,12 @@ public class MatchService {
 
     private void afterCommit(Runnable action) {
         transactionHelper.afterCommit(action);
+    }
+
+    private void evictPlayerStatsCache(UUID playerId) {
+        var cache = cacheManager.getCache("playerStats");
+        if (cache != null) {
+            cache.evict(playerId);
+        }
     }
 }

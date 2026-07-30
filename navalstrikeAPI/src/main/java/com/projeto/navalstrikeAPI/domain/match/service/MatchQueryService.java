@@ -9,6 +9,7 @@ import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryPageResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchHistoryResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchListResponse;
 import com.projeto.navalstrikeAPI.domain.match.dto.MatchResponse;
+import com.projeto.navalstrikeAPI.domain.match.dto.PlayerStatsDTO;
 import com.projeto.navalstrikeAPI.domain.match.entity.Match;
 import com.projeto.navalstrikeAPI.domain.match.repository.MatchRepository;
 import com.projeto.navalstrikeAPI.domain.ship.entity.Ship;
@@ -16,6 +17,7 @@ import com.projeto.navalstrikeAPI.domain.skin.service.SkinService;
 import com.projeto.navalstrikeAPI.domain.user.entity.User;
 import com.projeto.navalstrikeAPI.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -133,9 +135,17 @@ public class MatchQueryService {
             );
         }).toList();
 
+        PlayerStatsDTO stats = getPlayerStats(playerId);
+
+        return MatchHistoryPageResponse.of(content, page, size, matches.getTotalElements(), stats.totalVictories(), stats.totalDefeats());
+    }
+
+    @Cacheable(value = "playerStats", key = "#playerId")
+    @Transactional(readOnly = true)
+    public PlayerStatsDTO getPlayerStats(UUID playerId) {
+        User player = userRepository.findById(playerId).orElseThrow();
         long totalVictories = matchRepository.countVictories(player);
         long totalDefeats = matchRepository.countDefeats(player);
-
-        return MatchHistoryPageResponse.of(content, page, size, matches.getTotalElements(), totalVictories, totalDefeats);
+        return new PlayerStatsDTO(totalVictories, totalDefeats);
     }
 }
