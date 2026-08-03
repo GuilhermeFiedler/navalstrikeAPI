@@ -25,6 +25,7 @@ import java.util.List;
 @EnableWebSecurity
 public class SecurityConfig {
     private final JwtFilter jwtFilter;
+    private final RateLimitFilter rateLimitFilter;
 
     @Value("${metrics.auth.username:prometheus}")
     private String metricsUsername;
@@ -32,8 +33,9 @@ public class SecurityConfig {
     @Value("${metrics.auth.password:prometheus}")
     private String metricsPassword;
 
-    public SecurityConfig(JwtFilter jwtFilter) {
+    public SecurityConfig(JwtFilter jwtFilter, RateLimitFilter rateLimitFilter) {
         this.jwtFilter = jwtFilter;
+        this.rateLimitFilter = rateLimitFilter;
     }
 
     @Bean
@@ -98,6 +100,7 @@ public class SecurityConfig {
                             return new AuthorizationDecision(isLocal || isDockerNetwork);
                         })
                         .anyRequest().authenticated())
+                .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

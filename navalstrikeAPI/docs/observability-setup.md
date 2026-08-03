@@ -118,21 +118,21 @@ navalstrikeAPI/
 
 ---
 
-## Rodando os testes de carga (k6) com a stack ativa
+## Rodando o teste de carga (k6) com a stack ativa
 
-Com a stack rodando, você pode executar os testes k6 e observar o impacto em tempo real no Grafana:
+Com a stack rodando, você pode executar o teste k6 e observar o impacto em tempo real no Grafana:
 
 ```bash
 # Instalar k6
-sudo gpg -k
-sudo apt update
-sudo apt install -y k6
+sudo snap install k6
 
-# Rodar teste de auth
-k6 run navalstrikeAPI/k6/load-test-auth.js
+# Rodar teste de carga (registro + login)
+k6 run navalstrikeAPI/k6/load-test.js
 
-# Rodar teste de navegação (precisa de um usuário existente)
-k6 run -e USER_EMAIL=teste@email.com -e USER_PASSWORD=senha123 navalstrikeAPI/k6/load-test-navigation.js
+# Ou apontar para o deploy
+k6 run -e BASE_URL=https://sua-api.onrender.com navalstrikeAPI/k6/load-test.js
 ```
 
 Enquanto o k6 roda, acompanhe as métricas no Grafana (`http://localhost:3000`) para visualizar latência, throughput e erros em tempo real.
+
+> Os resultados dos testes estão documentados em `docs/load-test-results.md`.
