@@ -35,7 +35,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String clientIp = getClientIp(request);
-        AtomicInteger counter = requestCounts.get(clientIp, _ -> new AtomicInteger(0));
+        AtomicInteger counter = requestCounts.get(clientIp, key -> new AtomicInteger(0));
         int requests = counter.incrementAndGet();
 
         if (requests > MAX_REQUESTS_PER_MINUTE) {
